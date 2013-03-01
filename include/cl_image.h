@@ -3,6 +3,7 @@
 
 int processImage(char * imageSource, unsigned char ** results
     , int * width, int * height);
+int searchNearestPower(int num);
 
 #endif
 

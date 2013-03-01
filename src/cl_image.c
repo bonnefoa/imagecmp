@@ -1,6 +1,14 @@
 #include <image_utils.h>
 #include <cl_util.h>
 
+int searchNearestPower(int num) {
+  int counter = 0;
+  for( int i = num; i > 1; i >>= 1) {
+    counter += 1;
+  }
+  return counter;
+}
+
 int processImage(char * imageSource, unsigned char ** results
     , int * width, int * height) {
   cl_struct clStruct;
