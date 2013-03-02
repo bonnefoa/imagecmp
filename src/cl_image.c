@@ -1,3 +1,4 @@
+#include <cl_image.h>
 #include <image_utils.h>
 #include <cl_util.h>
 
@@ -9,10 +10,8 @@ int searchNearestPower(int num) {
   return counter;
 }
 
-int processImage(char * imageSource, unsigned char ** results
+int processImageFile(char * imageSource, unsigned char ** results
     , int * width, int * height) {
-  cl_struct clStruct;
-
   int imageWidth;
   int imageHeight;
   unsigned char ** pixels = malloc(sizeof(unsigned char **));
@@ -20,6 +19,21 @@ int processImage(char * imageSource, unsigned char ** results
   readImage(imageSource, pixels, &imageWidth, &imageHeight);
   printf("Processing image %s, width=%i, height=%i\n", imageSource
       , imageWidth, imageHeight);
+  int code = processImage(pixels, imageWidth, imageHeight
+      , width, height, results);
+
+  free(*pixels);
+  free(pixels);
+  return code;
+}
+
+int processImage(unsigned char ** pixels
+    , int imageWidth, int imageHeight
+    , int * width, int * height, unsigned char ** results) {
+  cl_struct clStruct;
+  cl_int err;
+  cl_mem imageBuffer;
+  cl_mem output;
 
   size_t localSizeX = 32;
   size_t localSizeY = 32;
@@ -32,14 +46,10 @@ int processImage(char * imageSource, unsigned char ** results
 
   clStruct = initCl("src/kernel_image.cl", "generateThumbnail");
   printClInfos(clStruct);
-  cl_int err;
 
   cl_image_format img_fmt;
   img_fmt.image_channel_order = CL_RGBA;
   img_fmt.image_channel_data_type = CL_UNSIGNED_INT8;
-
-  cl_mem imageBuffer;
-  cl_mem output;
 
   imageBuffer = clCreateImage2D(clStruct.context, CL_MEM_READ_ONLY
       , &img_fmt, imageWidth, imageHeight, 0, 0, &err);

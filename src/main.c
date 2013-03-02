@@ -8,7 +8,7 @@ int main(int argc, char * argv[]) {
   int width;
   int height;
 
-  processImage(argv[1], results, &width, &height);
+  processImageFile(argv[1], results, &width, &height);
 
   writeJpegImage("/tmp/toto.jpg", *results, width, height);
   return 0;
