@@ -1,6 +1,6 @@
 const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;
 
-__kernel void readImage(
+__kernel void generateThumbnail (
    __read_only image2d_t inputImage,
    __global uchar * output,
    __local uint3 * localArray) {
@@ -13,6 +13,7 @@ __kernel void readImage(
   int groupIdX = get_group_id(0);
   int groupIdY = get_group_id(1);
   int groupNumX = get_num_groups(0);
+  int groupNumY = get_num_groups(1);
 
   uint size = localSizeX * localSizeY;
 

@@ -30,7 +30,7 @@ int processImage(char * imageSource, unsigned char ** results
 
   *results = malloc(sizeof(unsigned char) * groupNumberX * groupNumberY * RGB_CHANNEL);
 
-  clStruct = initCl("src/kernel_image.cl", "readImage");
+  clStruct = initCl("src/kernel_image.cl", "generateThumbnail");
   printClInfos(clStruct);
   cl_int err;
 
