@@ -2,7 +2,7 @@ const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_F
 
 __kernel void generateThumbnail (
    __read_only image2d_t inputImage,
-   __global uchar * output,
+   __global uchar3 * output,
    __local uint3 * localArray) {
   int globalIdX = get_global_id(0);
   int globalIdY = get_global_id(1);
@@ -31,8 +31,8 @@ __kernel void generateThumbnail (
 
   if(localIdX==0 && localIdY==0) {
     int index = groupIdX * 3 + groupIdY * groupNumX * 3;
-    output[index]     = localArray[0].x / size;
-    output[index + 1] = localArray[0].y / size;
-    output[index + 2] = localArray[0].z / size;
+    output[index] = convert_uchar3(localArray[0] / size);
+  }
+}
   }
 }
