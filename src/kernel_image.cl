@@ -41,6 +41,7 @@ __kernel void generateHistogram (
   if(localIdX==0 && localIdY==0) {
     int index = groupIdX * 3 + groupIdY * groupNumX * 3;
 
-    outputBuffer[index] = convert_float16(localArray[0] / size);
+    outputBuffer[index] = convert_float16(localArray[0]);
+    outputBuffer[index] /= size;
   }
 }
