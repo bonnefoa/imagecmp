@@ -10,7 +10,7 @@ CCFLAGS = -I$(IDIR) -Wall
 LIBS = -ljpeg -lOpenCL
 TEST_LIBS = $(LIBS) -lcheck
 
-_OBJ = cl_image.o cl_util.o list.o image_utils.o
+_OBJ = cl_image.o cl_util.o list.o image_utils.o cl_histogram.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 _TESTS = check_cl_image.o
