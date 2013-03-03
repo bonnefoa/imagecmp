@@ -85,15 +85,6 @@ int processImage(unsigned char ** pixels
     return EXIT_FAILURE;
   }
 
-  size_t kernelSize;
-  err = clGetKernelWorkGroupInfo(clStruct.kernel, clStruct.deviceId
-      , CL_KERNEL_WORK_GROUP_SIZE, sizeof(kernelSize), &kernelSize, NULL);
-  if(err != CL_SUCCESS) {
-    fprintf(stderr, "Failed to retrieve kernel group info\n");
-    return EXIT_FAILURE;
-  }
-  printf("Kernel work group : %zu\n", kernelSize);
-
   size_t GWSize[]={imageWidth, imageHeight};
   size_t LWSize[]={localSizeX, localSizeY};
   err = clEnqueueNDRangeKernel(clStruct.commandQueue, clStruct.kernel, 2

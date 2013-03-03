@@ -64,6 +64,17 @@ void printClInfos(cl_struct clStruct) {
 
 }
 
+size_t getKernelGroup(cl_struct clStruct) {
+  size_t kernelSize;
+  cl_int err = clGetKernelWorkGroupInfo(clStruct.kernel, clStruct.deviceId
+      , CL_KERNEL_WORK_GROUP_SIZE, sizeof(kernelSize), &kernelSize, NULL);
+  if(err != CL_SUCCESS) {
+    fprintf(stderr, "Failed to retrieve kernel group info\n");
+    return 0;
+  }
+  return kernelSize;
+}
+
 cl_struct initCl(const char * kernelSource, const char * kernelName) {
   int devType = CL_DEVICE_TYPE_ALL;
 

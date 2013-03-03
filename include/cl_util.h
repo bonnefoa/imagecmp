@@ -19,5 +19,6 @@ char * readFile(const char * filename);
 cl_struct initCl(const char * kernelSource, const char * kernelName);
 void printClInfos(cl_struct clStruct);
 void printClProfiling(cl_event event);
+size_t getKernelGroup(cl_struct clStruct);
 
 #endif
