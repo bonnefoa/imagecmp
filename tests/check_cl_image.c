@@ -5,19 +5,24 @@
 #include <cl_histogram.h>
 #include <image_utils.h>
 
+#define assertFloatEquals(res, expected) fail_unless(res == expected, "Expected %f, got %f", expected, res)
+
+int width = 32;
+int height = 32;
+int resultWidth;
+int resultHeight;
+float ** results;
+unsigned char ** pixels;
+
 void setup (void) {
+  results = malloc(sizeof(float **));
+  pixels = malloc(sizeof(unsigned char **));
 }
 
 void teardown (void) {
+  free(results);
+  free(pixels);
 }
-
-START_TEST (test_near_power) {
-  int counter = searchNearestPower(4);
-  fail_unless(counter == 2, "Got %i", counter);
-  counter = searchNearestPower(512);
-  fail_unless(searchNearestPower(512) == 9, "Got %c", counter);
-}
-END_TEST
 
 void fill_pixels(unsigned char (*fill_funct)(int, int, int), int height
     , int width, unsigned char ** pixels) {
@@ -37,25 +42,18 @@ unsigned char zero_fill(int x, int y, int c) {
   return 0;
 }
 
-unsigned char one_fill(int x, int y, int c) {
-  return 1;
+START_TEST (test_near_power) {
+  ck_assert_int_eq(searchNearestPower(4), 2);
+  ck_assert_int_eq(searchNearestPower(512), 9);
 }
-
-void assertFloatEquals(float expected, float res) {
-  fail_unless(res == expected, "Expected %f, got %f", expected, res);
-}
+END_TEST
 
 START_TEST (test_histogram_simple) {
-  int width = 32;
-  int height = 32;
-  int resultWidth;
-  int resultHeight;
-
-  float ** results = malloc(sizeof(float **));
-  unsigned char ** pixels = malloc(sizeof(unsigned char **));
   fill_pixels(&zero_fill, height, width, pixels);
-  for(int i = 0; i < width * height * RGB_CHANNEL; i++) {
-    fail_unless((*pixels)[i] == 0);
+  for(int i = 0; i < width * height * RGB_CHANNEL; i+=4) {
+    ck_assert_int_eq((*pixels)[i], 0);
+    ck_assert_int_eq((*pixels)[i + 1], 0);
+    ck_assert_int_eq((*pixels)[i + 2], 0);
   }
 
   cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
@@ -67,17 +65,72 @@ START_TEST (test_histogram_simple) {
 
   for(int c = 0; c < RGB_CHANNEL; c++) {
     assertFloatEquals((*results)[c * BUCKET_NUMBER], 1.f);
-    for(int i = 1; i < BUCKET_NUMBER; i++){
-      assertFloatEquals((*results)[c * BUCKET_NUMBER + i], 0.f);
-    }
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 1], 0.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 2], 0.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 3], 0.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 4], 0.f);
   }
 }
 END_TEST
 
-START_TEST (test_histogram_different_values) {
+unsigned char blue_green_fill(int x, int y, int c) {
+  switch (c) {
+    case 0 :
+      return 1;
+    case 1 :
+      return 100;
+    case 2 :
+      return 250;
+  }
+  return 0;
+}
+
+START_TEST (test_histogram_blue_green) {
+  fill_pixels(&blue_green_fill, height, width, pixels);
+
+  cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
+  generateHistogram(clStruct, pixels, 32, 32
+      , &resultWidth, &resultHeight, results);
+
+  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 1.f);
+  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 1.f);
+  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 4], 1.f);
 }
 END_TEST
 
+unsigned char spilled_fill(int x, int y, int c) {
+  switch (c) {
+    case 0 :
+      if (x < 16)
+        return 0;
+      return 254;
+    case 1 :
+      if (x < 16)
+        return 51;
+      return 204;
+    case 2 :
+      if (x < 16)
+        return 102;
+      return 153;
+  }
+  return 0;
+}
+
+START_TEST (test_spilled_histogram) {
+  fill_pixels(&spilled_fill, height, width, pixels);
+
+  cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
+  generateHistogram(clStruct, pixels, 32, 32
+      , &resultWidth, &resultHeight, results);
+
+  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 0.5f);
+  assertFloatEquals((*results)[0 * BUCKET_NUMBER + 4], 0.5f);
+  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 0.5f);
+  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 4], 0.5f);
+  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 2], 0.5f);
+  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 3], 0.5f);
+}
+END_TEST
 
 Suite * soragl_suite (void) {
   Suite *s = suite_create ("cl_image");
@@ -85,7 +138,8 @@ Suite * soragl_suite (void) {
   tcase_add_checked_fixture (tc_core, setup, teardown);
   tcase_add_test (tc_core, test_near_power);
   tcase_add_test (tc_core, test_histogram_simple);
-  tcase_add_test (tc_core, test_histogram_different_values);
+  tcase_add_test (tc_core, test_histogram_blue_green);
+  tcase_add_test (tc_core, test_spilled_histogram);
   suite_add_tcase (s, tc_core);
   return s;
 }
