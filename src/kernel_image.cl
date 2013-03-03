@@ -1,9 +1,10 @@
 const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;
 
-__kernel void generateThumbnail (
+__kernel void generateHistogram (
    __read_only image2d_t inputImage,
-   __global uchar3 * output,
-   __local uint3 * localArray) {
+   __global float16 * outputBuffer,
+   __local ushort16 * localArray) {
+
   int globalIdX = get_global_id(0);
   int globalIdY = get_global_id(1);
   int localIdX = get_local_id(0);
@@ -18,21 +19,28 @@ __kernel void generateThumbnail (
   uint size = localSizeX * localSizeY;
 
   uint indexLocal = localIdX + localIdY * localSizeX;
-  localArray[ indexLocal ] = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
+  uint3 pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
+
+  for(int i = 0; i < 3; i++) {
+    localArray[ indexLocal ] = 0;
+  }
+
+  for (int i = 0; i < 3; i++ ) {
+    uchar bucket = i * 5 + pixel[i] / 51;
+    localArray[ indexLocal ][bucket] += 1;
+  }
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  for(unsigned int s = localSizeY * localSizeX / 2; s > 0; s>>=1) {
+  for ( unsigned int s = localSizeY * localSizeX / 2; s > 0; s >>= 1 ) {
       if(indexLocal < s) {
-          localArray[indexLocal]
-              += localArray[indexLocal + s];
+          localArray[indexLocal] += localArray[indexLocal + s];
       }
       barrier(CLK_LOCAL_MEM_FENCE);
   }
 
   if(localIdX==0 && localIdY==0) {
     int index = groupIdX * 3 + groupIdY * groupNumX * 3;
-    output[index] = convert_uchar3(localArray[0] / size);
-  }
-}
+
+    outputBuffer[index] = convert_float16(localArray[0] / size);
   }
 }
