@@ -2,14 +2,19 @@
 #include <cl_image.h>
 #include <stdio.h>
 #include <image_utils.h>
+#include <cl_histogram.h>
+#include <cl_util.h>
 
 int main(int argc, char * argv[]) {
-  unsigned char ** results = malloc(sizeof(unsigned char **));
-  int width;
-  int height;
+  char * imageSource = argv[1];
+  float ** results = malloc(sizeof(float **));
+  int resultWidth;
+  int resultHeight;
 
-  processImageFile(argv[1], results, &width, &height);
+  cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
+  int exitCode = generateHistogramFromFile(clStruct, imageSource
+      , &resultWidth, &resultHeight, results );
+  cleanCl(clStruct);
 
-  writeJpegImage("/tmp/toto.jpg", *results, width, height);
-  return 0;
+  return exitCode;
 }
