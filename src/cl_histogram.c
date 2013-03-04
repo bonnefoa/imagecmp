@@ -29,8 +29,11 @@ int generateHistogram(cl_struct clStruct
 
   size_t localSizeX = 32;
   size_t localSizeY = 32;
-  int groupNumberX = imageWidth / localSizeX;
-  int groupNumberY = imageHeight / localSizeY;
+  int globalWidth = roundUpPowerOfTwo(imageWidth);
+  int globalHeight = roundUpPowerOfTwo(imageHeight);
+
+  int groupNumberX = globalWidth / localSizeX;
+  int groupNumberY = globalHeight / localSizeY;
   *resultWidth = groupNumberX;
   *resultHeight = groupNumberY;
 
@@ -57,7 +60,7 @@ int generateHistogram(cl_struct clStruct
     return EXIT_FAILURE;
   }
 
-  size_t GWSize[]={imageWidth, imageHeight};
+  size_t GWSize[]={globalWidth, globalHeight};
   size_t LWSize[]={localSizeX, localSizeY};
   err = clEnqueueNDRangeKernel(clStruct.commandQueue, clStruct.kernel, 2
       , NULL, GWSize, LWSize, 0, NULL, &event);
