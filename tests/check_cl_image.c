@@ -134,6 +134,8 @@ START_TEST (test_spilled_histogram) {
 END_TEST
 
 START_TEST (test_read_from_file) {
+  width = 512;
+  height = 512;
   int resultWidth, resultHeight;
   char * imageSource = "/tmp/test.jpg";
   *pixels = malloc(sizeof(unsigned char) * width * height * RGB_CHANNEL);
