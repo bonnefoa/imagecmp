@@ -6,8 +6,7 @@
 #include <cl_util.h>
 
 int generateHistogramFromFile(cl_struct clStruct
-    , char * imageSource, float ** results
-    , int * width, int * height);
+    , char * imageSource, int * width, int * height, float ** results );
 int generateHistogram(cl_struct clStruct, unsigned char ** pixels
     , int imageWidth, int imageHeight
     , int * width, int * height, float ** results);

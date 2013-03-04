@@ -2,9 +2,8 @@
 #include <image_utils.h>
 #include <cl_histogram.h>
 
-int generateHistogramFromFile(cl_struct clStruct
-    , char * imageSource, float ** results
-    , int * width, int * height) {
+int generateHistogramFromFile(cl_struct clStruct, char * imageSource
+    , int * resultWidth, int * resultHeight, float ** results ) {
   int imageWidth;
   int imageHeight;
   unsigned char ** pixels = malloc(sizeof(unsigned char **));
@@ -13,7 +12,7 @@ int generateHistogramFromFile(cl_struct clStruct
   printf("Processing image %s, width=%i, height=%i\n", imageSource
       , imageWidth, imageHeight);
   int code = generateHistogram(clStruct, pixels, imageWidth, imageHeight
-      , width, height, results);
+      , resultWidth, resultHeight, results);
 
   free(*pixels);
   free(pixels);
@@ -23,7 +22,7 @@ int generateHistogramFromFile(cl_struct clStruct
 int generateHistogram(cl_struct clStruct
     , unsigned char ** pixels
     , int imageWidth, int imageHeight
-    , int * width, int * height, float ** results) {
+    , int * resultWidth, int * resultHeight, float ** results) {
   cl_int err;
   cl_mem outputBuffer;
   cl_event event;
@@ -32,8 +31,8 @@ int generateHistogram(cl_struct clStruct
   size_t localSizeY = 32;
   int groupNumberX = imageWidth / localSizeX;
   int groupNumberY = imageHeight / localSizeY;
-  *width = groupNumberX;
-  *height = groupNumberY;
+  *resultWidth = groupNumberX;
+  *resultHeight = groupNumberY;
 
   size_t numberElements = groupNumberX * groupNumberY
     * RGB_CHANNEL * BUCKET_NUMBER;
