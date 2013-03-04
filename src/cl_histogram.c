@@ -82,11 +82,6 @@ int generateHistogram(cl_struct clStruct
 
   clReleaseMemObject(imageBuffer);
   clReleaseMemObject(outputBuffer);
-  clReleaseProgram(clStruct.program);
-  clReleaseKernel(clStruct.kernel);
-  clReleaseCommandQueue(clStruct.commandQueue);
-  clReleaseContext(clStruct.context);
 
   return 0;
 }
-
