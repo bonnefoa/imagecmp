@@ -3,7 +3,7 @@
 
 #include <cl_util.h>
 
-int searchNearestPower(int num);
+int roundUpPowerOfTwo(int num);
 cl_mem pushImage(unsigned char * pixels, cl_struct clStruct
     , int imageWidth, int imageHeight);
 
