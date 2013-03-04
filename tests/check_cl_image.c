@@ -4,6 +4,7 @@
 #include <cl_image.h>
 #include <cl_histogram.h>
 #include <image_utils.h>
+#include <image_utils.h>
 
 #define assertFloatEquals(res, expected) fail_unless(res == expected, "Expected %f, got %f", expected, res)
 
@@ -27,8 +28,8 @@ void teardown (void) {
   free(pixels);
 }
 
-void fill_pixels(unsigned char (*fill_funct)(int, int, int), int height
-    , int width, unsigned char ** pixels) {
+void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int)
+    , int width, int height, unsigned char ** pixels) {
   *pixels = malloc(sizeof(unsigned char) * width * height * RGBA_CHANNEL);
   for(int y = 0; y < height; y++) {
     for(int x = 0; x < width; x++) {
@@ -52,7 +53,7 @@ START_TEST (test_near_power) {
 END_TEST
 
 START_TEST (test_histogram_simple) {
-  fill_pixels(&zero_fill, height, width, pixels);
+  fill_rgba_pixels(&zero_fill, width, height, pixels);
   for(int i = 0; i < width * height * RGB_CHANNEL; i+=4) {
     ck_assert_int_eq((*pixels)[i], 0);
     ck_assert_int_eq((*pixels)[i + 1], 0);
@@ -88,7 +89,7 @@ unsigned char blue_green_fill(int x, int y, int c) {
 }
 
 START_TEST (test_histogram_blue_green) {
-  fill_pixels(&blue_green_fill, height, width, pixels);
+  fill_rgba_pixels(&blue_green_fill, width, height, pixels);
 
   generateHistogram(clStruct, pixels, 32, 32
       , &resultWidth, &resultHeight, results);
@@ -118,7 +119,7 @@ unsigned char spilled_fill(int x, int y, int c) {
 }
 
 START_TEST (test_spilled_histogram) {
-  fill_pixels(&spilled_fill, height, width, pixels);
+  fill_rgba_pixels(&spilled_fill, width, height, pixels);
 
   generateHistogram(clStruct, pixels, 32, 32
       , &resultWidth, &resultHeight, results);
@@ -132,6 +133,27 @@ START_TEST (test_spilled_histogram) {
 }
 END_TEST
 
+START_TEST (test_read_from_file) {
+  int resultWidth, resultHeight;
+  char * imageSource = "/tmp/test.jpg";
+  *pixels = malloc(sizeof(unsigned char) * width * height * RGB_CHANNEL);
+  for(int y = 0; y < height; y++) {
+    for(int x = 0; x < width; x++) {
+      int index = y * width * RGB_CHANNEL + x * RGB_CHANNEL;
+      (*pixels)[index] = (*blue_green_fill)(x, y, 0);
+      (*pixels)[index + 1] = (*blue_green_fill)(x, y, 1);
+      (*pixels)[index + 2] = (*blue_green_fill)(x, y, 2);
+    }
+  }
+  writeJpegImage(imageSource, *pixels, width, height);
+  generateHistogramFromFile(clStruct, imageSource
+      , &resultWidth, &resultHeight, results);
+  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 1.f);
+  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 1.f);
+  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 4], 1.f);
+}
+END_TEST
+
 Suite * soragl_suite (void) {
   Suite *s = suite_create ("cl_image");
   TCase *tc_core = tcase_create ("cl_image");
@@ -140,6 +162,7 @@ Suite * soragl_suite (void) {
   tcase_add_test (tc_core, test_histogram_simple);
   tcase_add_test (tc_core, test_histogram_blue_green);
   tcase_add_test (tc_core, test_spilled_histogram);
+  tcase_add_test (tc_core, test_read_from_file);
   suite_add_tcase (s, tc_core);
   return s;
 }
