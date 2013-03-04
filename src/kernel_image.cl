@@ -21,9 +21,7 @@ __kernel void generateHistogram (
   uint indexLocal = localIdX + localIdY * localSizeX;
   uint3 pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
 
-  for(int i = 0; i < 3; i++) {
-    localArray[ indexLocal ] = 0;
-  }
+  localArray[ indexLocal ] = 0;
 
   for (int i = 0; i < 3; i++ ) {
     uchar bucket = i * 5 + pixel[i] / 51;
@@ -39,7 +37,7 @@ __kernel void generateHistogram (
   }
 
   if(localIdX==0 && localIdY==0) {
-    int index = groupIdX * 3 + groupIdY * groupNumX * 3;
+    int index = groupIdX + groupIdY * groupNumX;
 
     outputBuffer[index] = convert_float16(localArray[0]);
     outputBuffer[index] /= size;
