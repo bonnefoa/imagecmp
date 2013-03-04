@@ -34,8 +34,7 @@ int generateHistogram(cl_struct clStruct
   *resultWidth = groupNumberX;
   *resultHeight = groupNumberY;
 
-  size_t numberElements = groupNumberX * groupNumberY
-    * RGB_CHANNEL * BUCKET_NUMBER;
+  size_t numberElements = groupNumberX * groupNumberY * 16;
   *results = malloc(sizeof(float) * numberElements);
 
   cl_mem imageBuffer = pushImage(*pixels, clStruct, imageWidth, imageHeight);
