@@ -17,9 +17,16 @@ __kernel void generateHistogram (
   int groupNumY = get_num_groups(1);
 
   uint size = localSizeX * localSizeY;
+  int imageWidth = get_image_width(inputImage);
+  int imageHeight = get_image_height(inputImage);
 
   uint indexLocal = localIdX + localIdY * localSizeX;
-  uint3 pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
+  uint3 pixel = (uint3)(0, 0, 0);
+  if(globalIdX > imageWidth || globalIdY > imageHeight) {
+    pixel = (uint3)(0, 0, 0);
+  } else {
+    pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
+  }
 
   localArray[ indexLocal ] = 0;
 
