@@ -155,6 +155,7 @@ START_TEST (test_read_from_file) {
   writeJpegImage(imageSource, *pixels, width, height);
   generateHistogramFromFile(clStruct, imageSource
       , &resultWidth, &resultHeight, results);
+
   check_blue_green_results(results);
 }
 END_TEST
@@ -167,7 +168,14 @@ START_TEST (test_inegal_size) {
       , width, height
       , &resultWidth, &resultHeight, results);
 
-  check_blue_green_results(results);
+  for(int y = 0; y < resultWidth; y++) {
+    for(int x = 0; x < resultWidth; x++) {
+      assertFloatEquals((*results)[y * x * 16 + 0 * BUCKET_NUMBER], 1.f);
+      assertFloatEquals((*results)[y * x * 16 + 1 * BUCKET_NUMBER + 1], 1.f);
+      assertFloatEquals((*results)[y * x * 16 + 2 * BUCKET_NUMBER + 4], 1.f);
+    }
+  }
+
 }
 END_TEST
 
