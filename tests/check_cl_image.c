@@ -46,36 +46,6 @@ unsigned char zero_fill(int x, int y, int c) {
   return 0;
 }
 
-START_TEST (test_near_power) {
-  ck_assert_int_eq(searchNearestPower(4), 2);
-  ck_assert_int_eq(searchNearestPower(512), 9);
-}
-END_TEST
-
-START_TEST (test_histogram_simple) {
-  fill_rgba_pixels(&zero_fill, width, height, pixels);
-  for(int i = 0; i < width * height * RGB_CHANNEL; i+=4) {
-    ck_assert_int_eq((*pixels)[i], 0);
-    ck_assert_int_eq((*pixels)[i + 1], 0);
-    ck_assert_int_eq((*pixels)[i + 2], 0);
-  }
-
-  generateHistogram(clStruct, pixels, 32, 32
-      , &resultWidth, &resultHeight, results);
-
-  ck_assert_int_eq(resultWidth, 1);
-  ck_assert_int_eq(resultHeight, 1);
-
-  for(int c = 0; c < RGB_CHANNEL; c++) {
-    assertFloatEquals((*results)[c * BUCKET_NUMBER], 1.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 1], 0.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 2], 0.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 3], 0.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 4], 0.f);
-  }
-}
-END_TEST
-
 unsigned char blue_green_fill(int x, int y, int c) {
   switch (c) {
     case 0 :
@@ -87,18 +57,6 @@ unsigned char blue_green_fill(int x, int y, int c) {
   }
   return 0;
 }
-
-START_TEST (test_histogram_blue_green) {
-  fill_rgba_pixels(&blue_green_fill, width, height, pixels);
-
-  generateHistogram(clStruct, pixels, 32, 32
-      , &resultWidth, &resultHeight, results);
-
-  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 1.f);
-  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 1.f);
-  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 4], 1.f);
-}
-END_TEST
 
 unsigned char spilled_fill(int x, int y, int c) {
   switch (c) {
@@ -118,10 +76,57 @@ unsigned char spilled_fill(int x, int y, int c) {
   return 0;
 }
 
+void check_blue_green_results(float ** results) {
+  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 1.f);
+  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 1.f);
+  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 4], 1.f);
+}
+
+START_TEST (test_near_power) {
+  ck_assert_int_eq(roundUpPowerOfTwo(3), 4);
+  ck_assert_int_eq(roundUpPowerOfTwo(511), 512);
+  ck_assert_int_eq(roundUpPowerOfTwo(32), 32);
+}
+END_TEST
+
+START_TEST (test_histogram_simple) {
+  fill_rgba_pixels(&zero_fill, width, height, pixels);
+  for(int i = 0; i < width * height * RGB_CHANNEL; i+=4) {
+    ck_assert_int_eq((*pixels)[i], 0);
+    ck_assert_int_eq((*pixels)[i + 1], 0);
+    ck_assert_int_eq((*pixels)[i + 2], 0);
+  }
+
+  generateHistogram(clStruct, pixels, width, height
+      , &resultWidth, &resultHeight, results);
+
+  ck_assert_int_eq(resultWidth, 1);
+  ck_assert_int_eq(resultHeight, 1);
+
+  for(int c = 0; c < RGB_CHANNEL; c++) {
+    assertFloatEquals((*results)[c * BUCKET_NUMBER], 1.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 1], 0.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 2], 0.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 3], 0.f);
+    assertFloatEquals((*results)[c * BUCKET_NUMBER + 4], 0.f);
+  }
+}
+END_TEST
+
+START_TEST (test_histogram_blue_green) {
+  fill_rgba_pixels(&blue_green_fill, width, height, pixels);
+
+  generateHistogram(clStruct, pixels, width, height
+      , &resultWidth, &resultHeight, results);
+
+  check_blue_green_results(results);
+}
+END_TEST
+
 START_TEST (test_spilled_histogram) {
   fill_rgba_pixels(&spilled_fill, width, height, pixels);
 
-  generateHistogram(clStruct, pixels, 32, 32
+  generateHistogram(clStruct, pixels, width, height
       , &resultWidth, &resultHeight, results);
 
   assertFloatEquals((*results)[0 * BUCKET_NUMBER], 0.5f);
@@ -150,9 +155,19 @@ START_TEST (test_read_from_file) {
   writeJpegImage(imageSource, *pixels, width, height);
   generateHistogramFromFile(clStruct, imageSource
       , &resultWidth, &resultHeight, results);
-  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 1.f);
-  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 1.f);
-  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 4], 1.f);
+  check_blue_green_results(results);
+}
+END_TEST
+
+START_TEST (test_inegal_size) {
+  width = 60;
+  height = 50;
+  fill_rgba_pixels(&blue_green_fill, width, height, pixels);
+  generateHistogram(clStruct, pixels
+      , width, height
+      , &resultWidth, &resultHeight, results);
+
+  check_blue_green_results(results);
 }
 END_TEST
 
@@ -165,6 +180,7 @@ Suite * soragl_suite (void) {
   tcase_add_test (tc_core, test_histogram_blue_green);
   tcase_add_test (tc_core, test_spilled_histogram);
   tcase_add_test (tc_core, test_read_from_file);
+  tcase_add_test (tc_core, test_inegal_size);
   suite_add_tcase (s, tc_core);
   return s;
 }
