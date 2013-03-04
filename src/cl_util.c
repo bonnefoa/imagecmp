@@ -133,3 +133,10 @@ cl_struct initCl(const char * kernelSource, const char * kernelName) {
 
   return clStruct;
 }
+
+void cleanCl(cl_struct clStruct) {
+  clReleaseProgram(clStruct.program);
+  clReleaseKernel(clStruct.kernel);
+  clReleaseCommandQueue(clStruct.commandQueue);
+  clReleaseContext(clStruct.context);
+}
