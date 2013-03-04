@@ -13,13 +13,16 @@ int resultWidth;
 int resultHeight;
 float ** results;
 unsigned char ** pixels;
+cl_struct clStruct;
 
 void setup (void) {
   results = malloc(sizeof(float **));
   pixels = malloc(sizeof(unsigned char **));
+  clStruct = initCl("src/kernel_image.cl", "generateHistogram");
 }
 
 void teardown (void) {
+  cleanCl(clStruct);
   free(results);
   free(pixels);
 }
@@ -56,7 +59,6 @@ START_TEST (test_histogram_simple) {
     ck_assert_int_eq((*pixels)[i + 2], 0);
   }
 
-  cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
   generateHistogram(clStruct, pixels, 32, 32
       , &resultWidth, &resultHeight, results);
 
@@ -88,7 +90,6 @@ unsigned char blue_green_fill(int x, int y, int c) {
 START_TEST (test_histogram_blue_green) {
   fill_pixels(&blue_green_fill, height, width, pixels);
 
-  cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
   generateHistogram(clStruct, pixels, 32, 32
       , &resultWidth, &resultHeight, results);
 
@@ -119,7 +120,6 @@ unsigned char spilled_fill(int x, int y, int c) {
 START_TEST (test_spilled_histogram) {
   fill_pixels(&spilled_fill, height, width, pixels);
 
-  cl_struct clStruct = initCl("src/kernel_image.cl", "generateHistogram");
   generateHistogram(clStruct, pixels, 32, 32
       , &resultWidth, &resultHeight, results);
 
