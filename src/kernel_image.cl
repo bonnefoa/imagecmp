@@ -16,24 +16,22 @@ __kernel void generateHistogram (
   int groupNumX = get_num_groups(0);
   int groupNumY = get_num_groups(1);
 
-  uint size = localSizeX * localSizeY;
   int imageWidth = get_image_width(inputImage);
   int imageHeight = get_image_height(inputImage);
 
   uint indexLocal = localIdX + localIdY * localSizeX;
-  uint3 pixel = (uint3)(0, 0, 0);
-  if(globalIdX > imageWidth || globalIdY > imageHeight) {
-    pixel = (uint3)(0, 0, 0);
-  } else {
-    pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
-  }
-
   localArray[ indexLocal ] = 0;
 
-  for (int i = 0; i < 3; i++ ) {
-    uchar bucket = i * 5 + pixel[i] / 51;
-    localArray[ indexLocal ][bucket] += 1;
+  uint3 pixel = (uint3)(0, 0, 0);
+  if(globalIdX <= imageWidth || globalIdY <= imageHeight) {
+    pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
+    for (int i = 0; i < 3; i++ ) {
+        uchar bucket = i * 5 + pixel[i] / 51;
+        localArray[ indexLocal ][bucket] += 1;
+    }
+    localArray[ indexLocal ].sf += 1;
   }
+
   barrier(CLK_LOCAL_MEM_FENCE);
 
   for ( unsigned int s = localSizeY * localSizeX / 2; s > 0; s >>= 1 ) {
@@ -46,7 +44,9 @@ __kernel void generateHistogram (
   if(localIdX==0 && localIdY==0) {
     int index = groupIdX + groupIdY * groupNumX;
 
+    float numPixels = localArray[0].sf;
     outputBuffer[index] = convert_float16(localArray[0]);
-    outputBuffer[index] /= size;
+    outputBuffer[index] /= localArray[0].sf;
+    outputBuffer[index].sf = numPixels;
   }
 }
