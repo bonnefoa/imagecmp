@@ -1,69 +1,77 @@
-#include <cl_image.h>
+#include <cl_util.h>
 #include <image_utils.h>
 #include <cl_histogram.h>
 
-int generateHistogramFromFile(cl_struct clStruct, char * imageSource
-    , int * resultWidth, int * resultHeight, float ** results ) {
-  int imageWidth;
-  int imageHeight;
-  unsigned char ** pixels = malloc(sizeof(unsigned char **));
+job_t * job_init() {
+  job_t * job = malloc(sizeof(job_t));
+  return job;
+}
 
-  readImage(imageSource, pixels, &imageWidth, &imageHeight);
-  printf("Processing image %s, width=%i, height=%i\n", imageSource
-      , imageWidth, imageHeight);
-  int code = generateHistogram(clStruct, pixels, imageWidth, imageHeight
-      , resultWidth, resultHeight, results);
+void job_free(job_t * job) {
+  free((*job).results);
+  free(job);
+}
 
-  free(*pixels);
-  free(pixels);
+int initJobFromImage(cl_struct clStruct, image_t * image, job_t * job) {
+  cl_int err;
+  for(int i = 0; i < 2; i++) {
+    (*job).globalWorkSize[i] = roundUpPowerOfTwo((*image).size[i]);
+    (*job).localWorkSize[i] = 32;
+    (*job).resultSize[i] = (*job).globalWorkSize[i] / (*job).localWorkSize[i];
+  }
+  (*job).sizeResult = sizeof(float) * (*job).resultSize[0] * (*job).resultSize[1] * 16 * RGBA_CHANNEL;
+  (*job).results = malloc((*job).sizeResult);
+
+  (*job).outputBuffer = clCreateBuffer(clStruct.context
+      , CL_MEM_WRITE_ONLY, (*job).sizeResult, NULL, &err);
+  if(err != CL_SUCCESS) {
+    fprintf(stderr, "Failed to create buffer\n");
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
+int generateHistogramFromFile(char * filename, cl_struct clStruct
+    , job_t * jobHistogram) {
+  int code;
+  image_t * image = image_init();
+  (*image).path = filename;
+
+  image = readImage(image);
+  printf("Processing image %s, width=%i, height=%i\n", filename
+      , (*image).size[0], (*image).size[1]);
+  code = initJobFromImage(clStruct, image, jobHistogram);
+  code |= generateHistogram(clStruct, image, jobHistogram);
+
   return code;
 }
 
 int generateHistogram(cl_struct clStruct
-    , unsigned char ** pixels
-    , int imageWidth, int imageHeight
-    , int * resultWidth, int * resultHeight, float ** results) {
+    , image_t * image, job_t * job) {
   cl_int err;
-  cl_mem outputBuffer;
   cl_event event;
 
-  size_t localSizeX = 32;
-  size_t localSizeY = 32;
-  int globalWidth = roundUpPowerOfTwo(imageWidth);
-  int globalHeight = roundUpPowerOfTwo(imageHeight);
-
-  int groupNumberX = globalWidth / localSizeX;
-  int groupNumberY = globalHeight / localSizeY;
-  *resultWidth = groupNumberX;
-  *resultHeight = groupNumberY;
-
-  size_t numberElements = groupNumberX * groupNumberY * 16;
-  *results = malloc(sizeof(float) * numberElements);
-
-  cl_mem imageBuffer = pushImage(*pixels, clStruct, imageWidth, imageHeight);
-  if(imageBuffer == NULL){
+  (*job).imageBuffer = pushImage(clStruct, image);
+  if((*job).imageBuffer == NULL){
     return EXIT_FAILURE;
   }
 
-  outputBuffer = clCreateBuffer(clStruct.context, CL_MEM_WRITE_ONLY
-      , sizeof(float) * numberElements, NULL, &err);
-  if(err != CL_SUCCESS) {
-    fprintf(stderr, "Failed to create buffer\n"); return EXIT_FAILURE;
-  }
-
-  err = clSetKernelArg(clStruct.kernel, 0, sizeof(cl_mem), &imageBuffer);
-  err |= clSetKernelArg(clStruct.kernel, 1, sizeof(cl_mem), &outputBuffer);
+  err = clSetKernelArg(clStruct.kernel, 0, sizeof(cl_mem), &(*job).imageBuffer);
+  err |= clSetKernelArg(clStruct.kernel, 1, sizeof(cl_mem), &(*job).outputBuffer);
   err |= clSetKernelArg(clStruct.kernel, 2
-      , sizeof(cl_ushort16) * localSizeX * localSizeY, NULL);
+      , sizeof(cl_ushort16) * (*job).localWorkSize[0] * (*job).localWorkSize[1]
+      , NULL);
   if(err != CL_SUCCESS) {
-    fprintf(stderr, "Error on kernel arg set\n");
+    fprintf(stderr, "Error on kernel arg set %i\n", err);
     return EXIT_FAILURE;
   }
 
-  size_t GWSize[]={globalWidth, globalHeight};
-  size_t LWSize[]={localSizeX, localSizeY};
+  printf("Enqueing job global size %zu/%zu, localSize %zu/%zu\n"
+      , (*job).globalWorkSize[0], (*job).globalWorkSize[1]
+      , (*job).localWorkSize[0], (*job).localWorkSize[1]);
   err = clEnqueueNDRangeKernel(clStruct.commandQueue, clStruct.kernel, 2
-      , NULL, GWSize, LWSize, 0, NULL, &event);
+      , NULL, (*job).globalWorkSize, (*job).localWorkSize
+      , 0, NULL, &event);
   if(err != CL_SUCCESS) {
     fprintf(stderr, "Error on kernel enqueue %i\n", err);
     return EXIT_FAILURE;
@@ -72,17 +80,17 @@ int generateHistogram(cl_struct clStruct
   clFinish(clStruct.commandQueue);
   printClProfiling(event);
 
-  printf("Fetch results\n");
-  err = clEnqueueReadBuffer(clStruct.commandQueue, outputBuffer, CL_TRUE
-      , 0, sizeof(float) * numberElements
-      , *results, 0, NULL, NULL);
+  printf("Fetch %zu elements in results\n", (*job).sizeResult);
+  err = clEnqueueReadBuffer(clStruct.commandQueue, (*job).outputBuffer
+      , CL_TRUE, 0, (*job).sizeResult
+      , (*job).results, 0, NULL, NULL);
   if(err) {
     fprintf(stderr, "Failed to read outputBuffer array\n");
     return EXIT_FAILURE;
   }
 
-  clReleaseMemObject(imageBuffer);
-  clReleaseMemObject(outputBuffer);
+  clReleaseMemObject((*job).imageBuffer);
+  clReleaseMemObject((*job).outputBuffer);
 
   return 0;
 }
