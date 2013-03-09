@@ -5,7 +5,8 @@
 #include <cl_histogram.h>
 #include <image_utils.h>
 
-#define assert_float_equals(res, expected) fail_unless(res == expected, "Expected %f, got %f", expected, res)
+#define assert_float_equals(res, expected) fail_unless(res == expected \
+                , "Expected %f, got %f", expected, res)
 
 int width = 32;
 int height = 32;
@@ -197,9 +198,10 @@ START_TEST (test_inegal_size)
         float * results = (*job).results;
         for(int y = 0; y < (*job).result_size[0]; y++) {
                 for(int x = 0; x < (*job).result_size[1]; x++) {
-                        assert_float_equals(results[y * x * 16 + 0 * BUCKET_NUMBER], 1.f);
-                        assert_float_equals(results[y * x * 16 + 1 * BUCKET_NUMBER + 1], 1.f);
-                        assert_float_equals(results[y * x * 16 + 2 * BUCKET_NUMBER + 4], 1.f);
+                        int index = y * x * 16;
+                        assert_float_equals(results[index + 0 * BUCKET_NUMBER], 1.f);
+                        assert_float_equals(results[index + 1 * BUCKET_NUMBER + 1], 1.f);
+                        assert_float_equals(results[index + 2 * BUCKET_NUMBER + 4], 1.f);
                 }
         }
 
