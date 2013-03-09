@@ -1,6 +1,6 @@
+#include <string.h>
 #include <list.h>
 #include <stdio.h>
-#include <string.h>
 #include <dirent.h>
 
 listNode * listCreateNode() {
@@ -43,10 +43,11 @@ listNode * listFiles(const char * dirPath) {
       if (strncmp(".", ent->d_name, 1) == 0) {
         continue;
       }
-      char * fullPath = strndup(dirPath, strlen(ent->d_name) + pathLen + 2);
-      char * file = strdup(ent->d_name);
+      size_t sizeStr = strlen(ent->d_name) + pathLen + 2;
+      char * fullPath = malloc(sizeStr + 1);
+      strncpy(fullPath, dirPath, sizeStr);
       strcat(fullPath, "/");
-      strcat(fullPath, file);
+      strcat(fullPath, ent->d_name);
       list = listAppend(list, fullPath);
     }
     closedir (dir);

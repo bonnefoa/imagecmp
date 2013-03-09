@@ -86,8 +86,8 @@ image_t * readImage(image_t * image) {
 
   while (cinfo.output_scanline < cinfo.output_height) {
     jpeg_read_scanlines(&cinfo, buffer, 1);
-    for(int i = 0; i < cinfo.output_width; i++) {
-      int index = counter + i * RGBA_CHANNEL;
+    for(unsigned int i = 0; i < cinfo.output_width; i++) {
+      unsigned int index = counter + i * RGBA_CHANNEL;
       (*pixels)[index]     = buffer[0][i * cinfo.output_components];
       (*pixels)[index + 1] = buffer[0][i * cinfo.output_components + 1];
       (*pixels)[index + 2] = buffer[0][i * cinfo.output_components + 2];
