@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <CL/cl.h>
+#include <image_utils.h>
 
 typedef struct cl_struct {
   cl_platform_id cpPlateform;
@@ -21,5 +22,8 @@ void cleanCl(cl_struct clStruct);
 void printClInfos(cl_struct clStruct);
 void printClProfiling(cl_event event);
 size_t getKernelGroup(cl_struct clStruct);
+
+int roundUpPowerOfTwo(int num);
+cl_mem pushImage(cl_struct clStruct, image_t * imageInfo);
 
 #endif
