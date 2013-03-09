@@ -5,7 +5,7 @@ LDIR    = lib
 TESTDIR = tests
 
 CC      = clang
-CCFLAGS = -I$(IDIR) -Wall 
+CCFLAGS = -I$(IDIR) -Wall -Wextra -Werror -pedantic -std=c99
 
 LIBS = -ljpeg -lOpenCL
 TEST_LIBS = $(LIBS) -lcheck
