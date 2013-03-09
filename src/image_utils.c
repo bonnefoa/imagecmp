@@ -4,7 +4,19 @@
 #include <jpeglib.h>
 #include <string.h>
 
-void writeJpegImage(char * dest, unsigned char * pixels, int width, int height) {
+image_t * image_init() {
+  image_t * image = malloc(sizeof(image_t*));
+  (*image).pixels = malloc(sizeof(unsigned char **));
+  return image;
+}
+
+void image_free(image_t * image) {
+  free((*(*image).pixels));
+  free((*image).pixels);
+  free(image);
+}
+
+void writeJpegImage(char * dest, image_t * image) {
     FILE *outfile;
     if ((outfile = fopen(dest, "wb")) == NULL) {
         fprintf(stderr, "can't open %s", dest);
@@ -17,8 +29,8 @@ void writeJpegImage(char * dest, unsigned char * pixels, int width, int height) 
     jpeg_create_compress(&cinfo);
     jpeg_stdio_dest(&cinfo, outfile);
 
-    cinfo.image_width      = width;
-    cinfo.image_height     = height;
+    cinfo.image_width      = (*image).size[0];
+    cinfo.image_height     = (*image).size[1];
     cinfo.input_components = RGB_CHANNEL;
     cinfo.in_color_space   = JCS_RGB;
 
@@ -27,7 +39,8 @@ void writeJpegImage(char * dest, unsigned char * pixels, int width, int height) 
     jpeg_start_compress(&cinfo, 1);
 
     JSAMPROW row_pointer;
-    int row_stride = width * RGB_CHANNEL;
+    int row_stride = cinfo.image_width * RGB_CHANNEL;
+    unsigned char * pixels = *((*image).pixels);
 
     while (cinfo.next_scanline < cinfo.image_height) {
         row_pointer = (JSAMPROW) &pixels[cinfo.next_scanline*row_stride];
@@ -40,7 +53,7 @@ void writeJpegImage(char * dest, unsigned char * pixels, int width, int height) 
 }
 
 
-int readImage(char * filename, unsigned char ** pixels, int * width, int * height) {
+image_t * readImage(image_t * image) {
   struct jpeg_decompress_struct cinfo;
   struct jpeg_error_mgr * error_mgr = malloc(sizeof(struct jpeg_error_mgr));
 
@@ -48,9 +61,9 @@ int readImage(char * filename, unsigned char ** pixels, int * width, int * heigh
   JSAMPARRAY buffer;
   int row_stride;
 
-  if ((infile = fopen(filename, "rb")) == NULL) {
-    fprintf(stderr, "can't open %s\n", filename);
-    return 0;
+  if ((infile = fopen((*image).path, "rb")) == NULL) {
+    fprintf(stderr, "can't open %s\n", (*image).path);
+    return NULL;
   }
 
   cinfo.err = jpeg_std_error(error_mgr);
@@ -59,13 +72,14 @@ int readImage(char * filename, unsigned char ** pixels, int * width, int * heigh
   jpeg_read_header(&cinfo, TRUE);
   jpeg_start_decompress(&cinfo);
 
-  *width = cinfo.output_width;
-  *height = cinfo.output_height;
+  (*image).size[0] = cinfo.output_width;
+  (*image).size[1] = cinfo.output_height;
 
   row_stride = cinfo.output_width * RGB_CHANNEL;
   buffer = (JSAMPARRAY)malloc(sizeof(JSAMPROW));
   buffer[0] = (JSAMPROW)malloc(sizeof(JSAMPLE) * row_stride);
 
+  unsigned char ** pixels = ((*image).pixels);
   *pixels = malloc(sizeof(unsigned char) * cinfo.output_width * cinfo.output_height * 4);
 
   long counter = 0;
@@ -85,5 +99,5 @@ int readImage(char * filename, unsigned char ** pixels, int * width, int * heigh
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
   fclose(infile);
-  return 1;
+  return image;
 }
