@@ -1,35 +1,32 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <check.h>
-#include <cl_image.h>
+#include <cl_util.h>
 #include <cl_histogram.h>
-#include <image_utils.h>
 #include <image_utils.h>
 
 #define assertFloatEquals(res, expected) fail_unless(res == expected, "Expected %f, got %f", expected, res)
 
 int width = 32;
 int height = 32;
-int resultWidth;
-int resultHeight;
-float ** results;
-unsigned char ** pixels;
 cl_struct clStruct;
+job_t * job;
+image_t * image;
 
 void setup (void) {
-  results = malloc(sizeof(float **));
-  pixels = malloc(sizeof(unsigned char **));
+  job = job_init();
+  image = image_init();
   clStruct = initCl("src/kernel_image.cl", "generateHistogram");
 }
 
 void teardown (void) {
   cleanCl(clStruct);
-  free(results);
-  free(pixels);
+  job_free(job);
+  image_free(image);
 }
 
-void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int)
-    , int width, int height, unsigned char ** pixels) {
+void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int)) {
+  unsigned char ** pixels = (*image).pixels;
   *pixels = malloc(sizeof(unsigned char) * width * height * RGBA_CHANNEL);
   for(int y = 0; y < height; y++) {
     for(int x = 0; x < width; x++) {
@@ -40,6 +37,9 @@ void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int)
       (*pixels)[index + 3] = 0;
     }
   }
+  (*image).path = "test";
+  (*image).size[0] = width;
+  (*image).size[1] = height;
 }
 
 unsigned char zero_fill(int x, int y, int c) {
@@ -76,10 +76,10 @@ unsigned char spilled_fill(int x, int y, int c) {
   return 0;
 }
 
-void check_blue_green_results(float ** results) {
-  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 1.f);
-  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 1.f);
-  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 4], 1.f);
+void check_blue_green_results(float * results) {
+  assertFloatEquals(results[0 * BUCKET_NUMBER], 1.f);
+  assertFloatEquals(results[1 * BUCKET_NUMBER + 1], 1.f);
+  assertFloatEquals(results[2 * BUCKET_NUMBER + 4], 1.f);
 }
 
 START_TEST (test_near_power) {
@@ -90,60 +90,66 @@ START_TEST (test_near_power) {
 END_TEST
 
 START_TEST (test_histogram_simple) {
-  fill_rgba_pixels(&zero_fill, width, height, pixels);
+  fill_rgba_pixels(&zero_fill);
+  unsigned char * pixels = *(*image).pixels;
   for(int i = 0; i < width * height * RGB_CHANNEL; i+=4) {
-    ck_assert_int_eq((*pixels)[i], 0);
-    ck_assert_int_eq((*pixels)[i + 1], 0);
-    ck_assert_int_eq((*pixels)[i + 2], 0);
+    ck_assert_int_eq(pixels[i], 0);
+    ck_assert_int_eq(pixels[i + 1], 0);
+    ck_assert_int_eq(pixels[i + 2], 0);
   }
 
-  generateHistogram(clStruct, pixels, width, height
-      , &resultWidth, &resultHeight, results);
+  initJobFromImage(clStruct, image, job);
+  generateHistogram(clStruct, image, job);
 
-  ck_assert_int_eq(resultWidth, 1);
-  ck_assert_int_eq(resultHeight, 1);
+  ck_assert_int_eq((*job).resultSize[0], 1);
+  ck_assert_int_eq((*job).resultSize[1], 1);
 
   for(int c = 0; c < RGB_CHANNEL; c++) {
-    assertFloatEquals((*results)[c * BUCKET_NUMBER], 1.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 1], 0.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 2], 0.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 3], 0.f);
-    assertFloatEquals((*results)[c * BUCKET_NUMBER + 4], 0.f);
+    assertFloatEquals((*job).results[c * BUCKET_NUMBER], 1.f);
+    assertFloatEquals((*job).results[c * BUCKET_NUMBER + 1], 0.f);
+    assertFloatEquals((*job).results[c * BUCKET_NUMBER + 2], 0.f);
+    assertFloatEquals((*job).results[c * BUCKET_NUMBER + 3], 0.f);
+    assertFloatEquals((*job).results[c * BUCKET_NUMBER + 4], 0.f);
   }
 }
 END_TEST
 
 START_TEST (test_histogram_blue_green) {
-  fill_rgba_pixels(&blue_green_fill, width, height, pixels);
-
-  generateHistogram(clStruct, pixels, width, height
-      , &resultWidth, &resultHeight, results);
-
-  check_blue_green_results(results);
+  fill_rgba_pixels(&blue_green_fill);
+  initJobFromImage(clStruct, image, job);
+  generateHistogram(clStruct, image, job);
+  check_blue_green_results((*job).results);
 }
 END_TEST
 
 START_TEST (test_spilled_histogram) {
-  fill_rgba_pixels(&spilled_fill, width, height, pixels);
+  fill_rgba_pixels(&spilled_fill);
 
-  generateHistogram(clStruct, pixels, width, height
-      , &resultWidth, &resultHeight, results);
+  initJobFromImage(clStruct, image, job);
+  generateHistogram(clStruct, image, job);
 
-  assertFloatEquals((*results)[0 * BUCKET_NUMBER], 0.5f);
-  assertFloatEquals((*results)[0 * BUCKET_NUMBER + 4], 0.5f);
-  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 1], 0.5f);
-  assertFloatEquals((*results)[1 * BUCKET_NUMBER + 4], 0.5f);
-  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 2], 0.5f);
-  assertFloatEquals((*results)[2 * BUCKET_NUMBER + 3], 0.5f);
+  float * results = (*job).results;
+  assertFloatEquals(results[0 * BUCKET_NUMBER], 0.5f);
+  assertFloatEquals(results[0 * BUCKET_NUMBER + 4], 0.5f);
+  assertFloatEquals(results[1 * BUCKET_NUMBER + 1], 0.5f);
+  assertFloatEquals(results[1 * BUCKET_NUMBER + 4], 0.5f);
+  assertFloatEquals(results[2 * BUCKET_NUMBER + 2], 0.5f);
+  assertFloatEquals(results[2 * BUCKET_NUMBER + 3], 0.5f);
 }
 END_TEST
 
 START_TEST (test_read_from_file) {
   width = 512;
   height = 512;
-  int resultWidth, resultHeight;
-  char * imageSource = "/tmp/test.jpg";
-  *pixels = malloc(sizeof(unsigned char) * width * height * RGB_CHANNEL);
+  char * tempImagePath = "/tmp/test.jpg";
+  (*image).path = "/tmp/test.jpg";
+  (*image).size[0] = width;
+  (*image).size[1] = height;
+
+  unsigned char ** pixels = (*image).pixels;
+  *pixels = malloc(sizeof(unsigned char) * (*image).size[0]
+      * (*image).size[1] * RGB_CHANNEL);
+  mark_point();
   for(int y = 0; y < height; y++) {
     for(int x = 0; x < width; x++) {
       int index = y * width * RGB_CHANNEL + x * RGB_CHANNEL;
@@ -152,27 +158,28 @@ START_TEST (test_read_from_file) {
       (*pixels)[index + 2] = (*blue_green_fill)(x, y, 2);
     }
   }
-  writeJpegImage(imageSource, *pixels, width, height);
-  generateHistogramFromFile(clStruct, imageSource
-      , &resultWidth, &resultHeight, results);
 
-  check_blue_green_results(results);
+  mark_point();
+  writeJpegImage(tempImagePath, image);
+  generateHistogramFromFile(tempImagePath, clStruct, job);
+
+  check_blue_green_results((*job).results);
 }
 END_TEST
 
 START_TEST (test_inegal_size) {
   width = 60;
   height = 50;
-  fill_rgba_pixels(&blue_green_fill, width, height, pixels);
-  generateHistogram(clStruct, pixels
-      , width, height
-      , &resultWidth, &resultHeight, results);
+  fill_rgba_pixels(&blue_green_fill);
+  initJobFromImage(clStruct, image, job);
+  generateHistogram(clStruct, image, job);
 
-  for(int y = 0; y < resultWidth; y++) {
-    for(int x = 0; x < resultWidth; x++) {
-      assertFloatEquals((*results)[y * x * 16 + 0 * BUCKET_NUMBER], 1.f);
-      assertFloatEquals((*results)[y * x * 16 + 1 * BUCKET_NUMBER + 1], 1.f);
-      assertFloatEquals((*results)[y * x * 16 + 2 * BUCKET_NUMBER + 4], 1.f);
+  float * results = (*job).results;
+  for(int y = 0; y < (*job).resultSize[0]; y++) {
+    for(int x = 0; x < (*job).resultSize[1]; x++) {
+      assertFloatEquals(results[y * x * 16 + 0 * BUCKET_NUMBER], 1.f);
+      assertFloatEquals(results[y * x * 16 + 1 * BUCKET_NUMBER + 1], 1.f);
+      assertFloatEquals(results[y * x * 16 + 2 * BUCKET_NUMBER + 4], 1.f);
     }
   }
 
