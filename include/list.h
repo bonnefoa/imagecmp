@@ -4,14 +4,14 @@
 #include <stdlib.h>
 
 typedef struct listNode {
-  struct listNode * next;
-  void * value;
-} listNode;
+        struct listNode * next;
+        void * value;
+} listNode_t;
 
-listNode * listCreateNode(void);
-void listRelease(listNode * list);
-listNode * listAppend(listNode * list, void * value);
+listNode_t * list_create_node(void);
+void list_release(listNode_t * list);
+listNode_t * list_append(listNode_t * list, void * value);
 
-listNode * listFiles(const char * dirPath);
+listNode_t * list_files(const char * dir_path);
 
 #endif
