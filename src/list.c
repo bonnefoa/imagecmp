@@ -22,6 +22,7 @@ void list_release(list_t * list)
                 next = curr->next;
                 free(curr->value);
                 free(curr);
+                curr = next;
         }
 }
 
@@ -34,6 +35,22 @@ list_t * list_append(list_t * list, void * value)
         newNode->next = list;
         newNode->value = value;
         return newNode;
+}
+
+list_t * list_concat(list_t * list, list_t * list_2)
+{
+        if (list_2 == NULL) {
+                return list;
+        }
+        if (list == NULL) {
+                return list_2;
+        }
+        list_t * current = list;
+        while((*current).next != NULL) {
+                current = (*current).next;
+        }
+        current->next = list_2;
+        return list;
 }
 
 list_t * list_files(const char * dir_path)
