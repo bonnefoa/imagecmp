@@ -13,7 +13,7 @@ int main(int argc, char * argv[])
         }
         char * imageSource = argv[1];
 
-        clinfo_t clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
+        clinfo_t clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         job_t * job = job_init();
         int exitCode = generate_histogram_from_file(imageSource , clinfo, job);
         clinfo_free(clinfo);
