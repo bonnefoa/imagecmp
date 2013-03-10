@@ -10,11 +10,8 @@ CCFLAGS = -I$(IDIR) -Wall -Wextra -Werror -pedantic -std=c99
 LIBS = -ljpeg -lOpenCL
 TEST_LIBS = $(LIBS) -lcheck
 
-_OBJ = cl_util.o list.o image_utils.o cl_histogram.o
+_OBJ = cl_util.o list.o image_utils.o cl_histogram.o job_handler.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
-
-_TESTS = check_cl_image.o
-TESTS = $(patsubst %,$(ODIR)/%,$(_TESTS))
 
 MAIN = $(ODIR)/main.o $(OBJ) 
 
@@ -32,7 +29,10 @@ $(ODIR)/%.o: $(TESTDIR)/%.c
 main: $(MAIN)
 	$(CC) -o $@ $^ $(CCFLAGS) $(LIBS)
 
-check_cl_image: $(TESTS) $(OBJ) 
+check_cl_image: $(ODIR)/check_cl_image.o $(OBJ) 
+	$(CC) -o $@ $^ $(CCFLAGS) $(TEST_LIBS) 
+
+check_job_handler: $(ODIR)/check_job_handler.o $(OBJ) 
 	$(CC) -o $@ $^ $(CCFLAGS) $(TEST_LIBS) 
 
 .PHONY: clean
