@@ -3,6 +3,8 @@
 
 #define BUCKET_NUMBER 5
 
+#define KERNEL_PATH "src/kernel_image.cl"
+#define KERNEL_FUNCTION "generate_histogram"
 #include <cl_util.h>
 
 typedef struct job {
@@ -24,5 +26,7 @@ int generate_histogram_from_file(char * filename
                               , clinfo_t clinfo, job_t * job);
 int generate_histogram(clinfo_t clinfo
                       , image_t * image, job_t * job);
+
+float histogram_distance(float * histo_1, float * histo_2);
 
 #endif

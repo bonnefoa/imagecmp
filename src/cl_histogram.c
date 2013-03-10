@@ -1,10 +1,12 @@
 #include <cl_util.h>
+#include <math.h>
 #include <image_utils.h>
 #include <cl_histogram.h>
 
 job_t * job_init()
 {
         job_t *job = malloc(sizeof(job_t));
+        (*job).results = NULL;
         return job;
 }
 
@@ -98,4 +100,13 @@ int generate_histogram(clinfo_t clinfo
         clReleaseMemObject((*job).image_buffer);
         clReleaseMemObject((*job).output_buffer);
         return 0;
+}
+
+float histogram_distance(float * histo_1, float * histo_2)
+{
+        float dist = 0.f;
+        for(unsigned int i = 0; i < 15; i++) {
+                dist += fabs(histo_2[i] - histo_1[i]);
+        }
+        return fabs(dist);
 }
