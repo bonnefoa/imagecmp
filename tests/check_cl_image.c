@@ -1,12 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <check.h>
+#include <job_handler.h>
 #include <cl_util.h>
 #include <cl_histogram.h>
 #include <image_utils.h>
-
-#define assert_float_equals(res, expected) fail_unless(res == expected \
-                , "Expected %f, got %f", expected, res)
+#include <math.h>
+#define EPSILON 0.01f
+#define assert_float_equals(res, expected) \
+        fail_unless(fabs(res - expected) < EPSILON\
+                        , "Expected %f, got %f", expected, res)
 
 int width = 32;
 int height = 32;
@@ -157,32 +160,32 @@ START_TEST (test_spilled_histogram)
 }
 END_TEST
 
-START_TEST (test_read_from_file)
+void create_test_file(char * path, unsigned char (*fill_funct)(int, int, int))
 {
         width = 512;
         height = 512;
-        char * tempImagePath = "/tmp/test.jpg";
-        (*image).path = "/tmp/test.jpg";
+        (*image).path = path;
         (*image).size[0] = width;
         (*image).size[1] = height;
-
         unsigned char ** pixels = (*image).pixels;
         *pixels = malloc(sizeof(unsigned char) * (*image).size[0]
-                         * (*image).size[1] * RGB_CHANNEL);
-        mark_point();
+                        * (*image).size[1] * RGB_CHANNEL);
         for(int y = 0; y < height; y++) {
                 for(int x = 0; x < width; x++) {
                         int index = y * width * RGB_CHANNEL + x * RGB_CHANNEL;
-                        (*pixels)[index] = (*blue_green_fill)(x, y, 0);
-                        (*pixels)[index + 1] = (*blue_green_fill)(x, y, 1);
-                        (*pixels)[index + 2] = (*blue_green_fill)(x, y, 2);
+                        (*pixels)[index] = (*fill_funct)(x, y, 0);
+                        (*pixels)[index + 1] = (*fill_funct)(x, y, 1);
+                        (*pixels)[index + 2] = (*fill_funct)(x, y, 2);
                 }
         }
+        write_jpeg_image(path, image);
+}
 
-        mark_point();
-        write_jpeg_image(tempImagePath, image);
-        generate_histogram_from_file(tempImagePath, clinfo, job);
-
+START_TEST (test_read_from_file)
+{
+        char * path = "/tmp/test.jpg";
+        create_test_file(path, blue_green_fill);
+        generate_histogram_from_file(path, clinfo, job);
         check_blue_green_results((*job).results);
 }
 END_TEST
@@ -194,7 +197,6 @@ START_TEST (test_inegal_size)
         fill_rgba_pixels(&blue_green_fill);
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
-
         float * results = (*job).results;
         for(int y = 0; y < (*job).result_size[0]; y++) {
                 for(int x = 0; x < (*job).result_size[1]; x++) {
@@ -204,7 +206,21 @@ START_TEST (test_inegal_size)
                         assert_float_equals(results[index + 2 * BUCKET_NUMBER + 4], 1.f);
                 }
         }
+}
+END_TEST
 
+START_TEST (test_histogram_distance)
+{
+        float * histo_1 = malloc(sizeof(float) * 16);
+        float * histo_2 = malloc(sizeof(float) * 16);
+        mark_point();
+        for(unsigned int i = 0; i < 15; i++) {
+                histo_1[i] = 0.f;
+                histo_2[i] = 0.1f;
+        }
+        mark_point();
+        float res = histogram_distance(histo_1, histo_2);
+        assert_float_equals(res, 1.5f);
 }
 END_TEST
 
@@ -219,6 +235,7 @@ Suite * soragl_suite (void)
         tcase_add_test (tc_core, test_spilled_histogram);
         tcase_add_test (tc_core, test_read_from_file);
         tcase_add_test (tc_core, test_inegal_size);
+        tcase_add_test (tc_core, test_histogram_distance);
         suite_add_tcase (s, tc_core);
         return s;
 }
