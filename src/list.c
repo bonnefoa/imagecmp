@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <dirent.h>
 
-listNode_t * list_create_node()
+list_t * list_create_node()
 {
-        struct listNode *list;
+        struct list *list;
         if((list = malloc(sizeof(*list))) == NULL) {
                 return NULL;
         }
@@ -14,10 +14,10 @@ listNode_t * list_create_node()
         return list;
 }
 
-void list_release(listNode_t * list)
+void list_release(list_t * list)
 {
-        listNode_t * curr = list;
-        listNode_t * next = NULL;
+        list_t * curr = list;
+        list_t * next = NULL;
         while(curr) {
                 next = curr->next;
                 free(curr->value);
@@ -25,20 +25,20 @@ void list_release(listNode_t * list)
         }
 }
 
-listNode_t * list_append(listNode_t * list, void * value)
+list_t * list_append(list_t * list, void * value)
 {
         if (value == NULL) {
                 return list;
         }
-        listNode_t * newNode = list_create_node();
+        list_t * newNode = list_create_node();
         newNode->next = list;
         newNode->value = value;
         return newNode;
 }
 
-listNode_t * list_files(const char * dir_path)
+list_t * list_files(const char * dir_path)
 {
-        listNode_t * list = NULL;
+        list_t * list = NULL;
         int pathLen = strlen(dir_path);
         DIR *dir;
         struct dirent *ent;
