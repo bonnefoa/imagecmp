@@ -8,6 +8,7 @@ image_t * image_init()
 {
         image_t * image = malloc(sizeof(image_t*));
         (*image).pixels = malloc(sizeof(unsigned char **));
+        *(*image).pixels = NULL;
         return image;
 }
 
