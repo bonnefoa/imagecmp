@@ -28,5 +28,6 @@ int generate_histogram(clinfo_t clinfo
                       , image_t * image, job_t * job);
 
 float histogram_distance(float * histo_1, float * histo_2);
+float * histogram_average(float * histo, int size);
 
 #endif
