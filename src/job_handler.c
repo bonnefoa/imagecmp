@@ -14,9 +14,10 @@ list_t * process_files(list_t * files, float threshold)
                 generate_histogram_from_file(file, clinfo, job);
                 histogram_t * histo = malloc(sizeof(histogram_t));
                 (*histo).file = file;
-                (*histo).results = (*job).results;
+                int size = (*job).result_size[0] * (*job).result_size[1];
+                (*histo).results = histogram_average((*job).results, size);
                 histograms = list_append(histograms, histo);
-                free(job);
+                job_free(job);
         }
         clinfo_free(clinfo);
         current = histograms;
