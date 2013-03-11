@@ -1,8 +1,4 @@
-#include <list.h>
-#include <stdio.h>
-#include <image_utils.h>
-#include <cl_histogram.h>
-#include <cl_util.h>
+#include <job_handler.h>
 
 int main(int argc, char * argv[])
 {
@@ -11,12 +7,18 @@ int main(int argc, char * argv[])
                         "or a file as parameter\n");
                 exit(EXIT_FAILURE);
         }
-        char * imageSource = argv[1];
+        list_t * files = list_files(argv[1]);
+        list_t * results = process_files(files, 10.f);
 
-        clinfo_t clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
-        job_t * job = job_init();
-        int exitCode = generate_histogram_from_file(imageSource , clinfo, job);
-        clinfo_free(clinfo);
-
-        return exitCode;
+        list_t * current = results;
+        while(current != NULL) {
+                list_t * sublist = (*current).value;
+                while (sublist != NULL) {
+                        printf("%s ", (char *)(*sublist).value);
+                        sublist = (*sublist).next;
+                }
+                printf("\n");
+                current = (*current).next;
+        }
+        return 0;
 }
