@@ -192,8 +192,8 @@ END_TEST
 
 START_TEST (test_inegal_size)
 {
-        width = 60;
-        height = 50;
+        width = 2000;
+        height = 3500;
         fill_rgba_pixels(&blue_green_fill);
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
@@ -224,6 +224,19 @@ START_TEST (test_histogram_distance)
 }
 END_TEST
 
+START_TEST (test_histogram_average)
+{
+        float * histo = malloc(sizeof(float) * 32);
+        for(unsigned int i = 0; i < 32; i++) {
+                histo[i] = 0.1f;
+        }
+        float * res = histogram_average(histo, 2);
+        for(int i = 0; i < BUCKET_NUMBER; i++) {
+                assert_float_equals(res[i], 0.1f);
+        }
+}
+END_TEST
+
 Suite * soragl_suite (void)
 {
         Suite *s = suite_create ("cl_image");
@@ -236,6 +249,7 @@ Suite * soragl_suite (void)
         tcase_add_test (tc_core, test_read_from_file);
         tcase_add_test (tc_core, test_inegal_size);
         tcase_add_test (tc_core, test_histogram_distance);
+        tcase_add_test (tc_core, test_histogram_average);
         suite_add_tcase (s, tc_core);
         return s;
 }
