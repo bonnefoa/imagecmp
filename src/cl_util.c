@@ -74,6 +74,14 @@ void print_cl_info(clinfo_t clinfo)
                         , sizeof(sup), &sup, NULL);
         printf("Image supported : %i\n", sup);
 
+        size_t image_width;
+        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH
+                        , sizeof(image_width), &image_width, NULL);
+
+        size_t image_height;
+        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT
+                        , sizeof(image_height), &image_height, NULL);
+        printf("Image max resolution %zu / %zu\n", image_width, image_height);
 }
 
 size_t get_kernel_group(clinfo_t clinfo)
@@ -156,30 +164,30 @@ void clinfo_free(clinfo_t clinfo)
         clReleaseContext(clinfo.context);
 }
 
-cl_mem push_image(clinfo_t clinfo, image_t * image)
+cl_mem push_image(clinfo_t clinfo, image_t * image, cl_event * event)
 {
         cl_mem image_buffer;
         cl_int err;
         cl_image_format img_fmt;
         img_fmt.image_channel_order = CL_RGBA;
         img_fmt.image_channel_data_type = CL_UNSIGNED_INT8;
-
         image_buffer = clCreateImage2D(clinfo.context, CL_MEM_READ_ONLY
                                       , &img_fmt, (*image).size[0], (*image).size[1], 0, 0, &err);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to create image buffer, %i\n", err);
                 return NULL;
         }
-
         size_t origin[] = {0,0,0};
         size_t region[] = {(*image).size[0], (*image).size[1], 1};
-        printf("Pushing image of size %i/%i\n", (*image).size[0], (*image).size[1]);
+        printf("Pushing image of size %i/%i\n", (*image).size[0]
+                        , (*image).size[1]);
         err = clEnqueueWriteImage(clinfo.command_queue, image_buffer
-                                  , CL_TRUE, origin, region, 0, 0, *(*image).pixels, 0, NULL, NULL);
+                                  , CL_FALSE, origin, region
+                                  , 0, 0, *(*image).pixels, 0, NULL, event);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to write image to memory %i\n", err);
                 return NULL;
         }
-
+        clWaitForEvents(1, event);
         return image_buffer;
 }

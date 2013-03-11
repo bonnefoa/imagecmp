@@ -25,6 +25,6 @@ void print_cl_profiling(cl_event event);
 size_t get_kernel_group(clinfo_t clinfo);
 
 int round_up_power_of_two(int num);
-cl_mem push_image(clinfo_t clinfo, image_t * image);
+cl_mem push_image(clinfo_t clinfo, image_t * image, cl_event * event);
 
 #endif
