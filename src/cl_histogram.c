@@ -56,9 +56,10 @@ int generate_histogram(clinfo_t clinfo
                       , image_t * image, job_t * job)
 {
         cl_int err;
-        cl_event event;
+        cl_event enqueue_event;
+        cl_event * image_event = malloc(sizeof(cl_event));
 
-        (*job).image_buffer = push_image(clinfo, image);
+        (*job).image_buffer = push_image(clinfo, image, image_event);
         if((*job).image_buffer == NULL) {
                 return EXIT_FAILURE;
         }
@@ -79,24 +80,25 @@ int generate_histogram(clinfo_t clinfo
         err = clEnqueueNDRangeKernel(clinfo.command_queue, clinfo.kernel, 2
                                      , NULL, (*job).global_size
                                      , (*job).local_size
-                                     , 0, NULL, &event);
+                                     , 1, image_event, &enqueue_event);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Error on kernel enqueue %i\n", err);
                 return EXIT_FAILURE;
         }
 
-        clFinish(clinfo.command_queue);
-        print_cl_profiling(event);
-
-        printf("Fetch %zu elements in results\n", (*job).output_size);
+        printf("Fetch %i / %i elements in results\n", (*job).result_size[0]
+                        , (*job).result_size[1]);
         err = clEnqueueReadBuffer(clinfo.command_queue, (*job).output_buffer
                                   , CL_TRUE, 0, (*job).output_size
-                                  , (*job).results, 0, NULL, NULL);
+                                  , (*job).results, 1, &enqueue_event, NULL);
         if(err) {
                 fprintf(stderr, "Failed to read output buffer array\n");
                 return EXIT_FAILURE;
         }
 
+        clFinish(clinfo.command_queue);
+
+        free(image_event);
         clReleaseMemObject((*job).image_buffer);
         clReleaseMemObject((*job).output_buffer);
         return 0;
