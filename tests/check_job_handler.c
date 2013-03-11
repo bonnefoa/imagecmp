@@ -56,8 +56,9 @@ START_TEST (test_job_handler)
         files = list_append(files, path_1);
         files = list_append(files, path_2);
         list_t * similar = process_files(files, 100.f);
-        ck_assert_str_eq((*similar).value, path_1);
-        ck_assert_str_eq((*((*similar).next)).value, path_2);
+        list_t * inner_list = (*similar).value;
+        ck_assert_str_eq((*inner_list).value, path_1);
+        ck_assert_str_eq((*((*inner_list).next)).value, path_2);
         similar = process_files(files, 1.f);
         fail_unless(similar == NULL, "Expected null result with no match");
 }

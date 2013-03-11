@@ -25,9 +25,8 @@ list_t * process_files(list_t * files, float threshold)
                                 , (*current).next
                                 , threshold);
                 current = (*current).next;
-                similar_files = list_concat(lst_files, similar_files);
+                similar_files = list_append(similar_files, lst_files);
         }
-        current = similar_files;
         list_release(histograms);
         return similar_files;
 }
