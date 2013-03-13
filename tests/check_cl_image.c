@@ -198,9 +198,9 @@ START_TEST (test_inegal_size)
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
         float * results = (*job).results;
-        for(int y = 0; y < (*job).result_size[0]; y++) {
-                for(int x = 0; x < (*job).result_size[1]; x++) {
-                        int index = y * x * 16;
+        for(int y = 0; y < (*job).result_size[1]; y++) {
+                for(int x = 0; x < (*job).result_size[0]; x++) {
+                        int index = y * (*job).result_size[0] * 16 + x * (*job).result_size[1] * 16;
                         assert_float_equals(results[index + 0 * BUCKET_NUMBER], 1.f);
                         assert_float_equals(results[index + 1 * BUCKET_NUMBER + 1], 1.f);
                         assert_float_equals(results[index + 2 * BUCKET_NUMBER + 4], 1.f);
