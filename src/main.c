@@ -8,7 +8,7 @@ int main(int argc, char * argv[])
                 exit(EXIT_FAILURE);
         }
         list_t * files = list_files(argv[1]);
-        list_t * results = process_files(files, 10.f);
+        list_t * results = process_files(files, 0.05f);
 
         list_t * current = results;
         while(current != NULL) {
