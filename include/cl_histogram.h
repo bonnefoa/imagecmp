@@ -2,6 +2,7 @@
 #define __CL_HISTOGRAM_H__
 
 #define BUCKET_NUMBER 5
+#define VECTOR_SIZE 16
 
 #define KERNEL_PATH "src/kernel_image.cl"
 #define KERNEL_FUNCTION "generate_histogram"
@@ -10,6 +11,7 @@
 typedef struct job {
         size_t global_size[2];
         size_t local_size[2];
+        int group_number[2];
         int result_size[2];
         cl_mem output_buffer;
         cl_mem image_buffer;
@@ -29,5 +31,6 @@ int generate_histogram(clinfo_t clinfo
 
 float histogram_distance(float * histo_1, float * histo_2);
 float * histogram_average(float * histo, int size);
+float * reduce_histogram(float * fetched_result, job_t * job);
 
 #endif
