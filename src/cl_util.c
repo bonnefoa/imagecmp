@@ -188,6 +188,5 @@ cl_mem push_image(clinfo_t clinfo, image_t * image, cl_event * event)
                 fprintf(stderr, "Failed to write image to memory %i\n", err);
                 return NULL;
         }
-        clWaitForEvents(1, event);
         return image_buffer;
 }
