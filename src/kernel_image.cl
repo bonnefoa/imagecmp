@@ -47,7 +47,9 @@ __kernel void generate_histogram (
 
                 float numPixels = localArray[0].sf;
                 outputBuffer[index] = convert_float16(localArray[0]);
-                outputBuffer[index] /= localArray[0].sf;
+                if (localArray[0].sf != 0) {
+                    outputBuffer[index] /= localArray[0].sf;
+                }
                 outputBuffer[index].sf = numPixels;
         }
 }
