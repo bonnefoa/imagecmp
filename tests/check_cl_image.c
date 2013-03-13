@@ -120,6 +120,7 @@ START_TEST (test_histogram_simple)
 
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
+        clFinish(clinfo.command_queue);
 
         ck_assert_int_eq((*job).result_size[0], 1);
         ck_assert_int_eq((*job).result_size[1], 1);
@@ -139,6 +140,7 @@ START_TEST (test_histogram_blue_green)
         fill_rgba_pixels(&blue_green_fill);
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
+        clFinish(clinfo.command_queue);
         check_blue_green_results((*job).results);
 }
 END_TEST
@@ -149,6 +151,7 @@ START_TEST (test_spilled_histogram)
 
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
+        clFinish(clinfo.command_queue);
 
         float * results = (*job).results;
         assert_float_equals(results[0 * BUCKET_NUMBER], 0.5f);
@@ -186,6 +189,7 @@ START_TEST (test_read_from_file)
         char * path = "/tmp/test.jpg";
         create_test_file(path, blue_green_fill);
         generate_histogram_from_file(path, clinfo, job);
+        clFinish(clinfo.command_queue);
         check_blue_green_results((*job).results);
 }
 END_TEST
@@ -197,6 +201,7 @@ START_TEST (test_inegal_size)
         fill_rgba_pixels(&blue_green_fill);
         init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
+        clFinish(clinfo.command_queue);
         float * results = (*job).results;
         for(int y = 0; y < (*job).result_size[1]; y++) {
                 for(int x = 0; x < (*job).result_size[0]; x++) {
