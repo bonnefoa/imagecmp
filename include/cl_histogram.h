@@ -17,6 +17,7 @@ typedef struct job {
         cl_mem image_buffer;
         size_t output_size;
         float * results;
+        float * fetched_results;
 } job_t;
 
 job_t * job_init();
@@ -31,6 +32,6 @@ int generate_histogram(clinfo_t clinfo
 
 float histogram_distance(float * histo_1, float * histo_2);
 float * histogram_average(float * histo, int size);
-float * reduce_histogram(float * fetched_result, job_t * job);
+float * reduce_histogram(job_t * job);
 
 #endif

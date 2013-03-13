@@ -7,11 +7,13 @@ job_t * job_init()
 {
         job_t *job = malloc(sizeof(job_t));
         (*job).results = NULL;
+        (*job).fetched_results = NULL;
         return job;
 }
 
 void job_free(job_t * job)
 {
+        free((*job).fetched_results);
         free((*job).results);
         free(job);
 }
@@ -27,6 +29,7 @@ int init_job_from_image(clinfo_t clinfo, image_t * image, job_t * job)
         }
         (*job).output_size = sizeof(float) * (*job).group_number[0]
                 * (*job).group_number[1] * VECTOR_SIZE;
+        (*job).fetched_results = malloc((*job).output_size);
         (*job).results = malloc(sizeof(float) * (*job).result_size[0]
                         * (*job).result_size[1] * VECTOR_SIZE);
 
@@ -51,8 +54,20 @@ int generate_histogram_from_file(char * filename
                , (*image).size[0], (*image).size[1]);
         code = init_job_from_image(clinfo, image, job);
         code |= generate_histogram(clinfo, image, job);
+        image_free(image);
 
         return code;
+}
+
+void event_callback(cl_event event, cl_int exec_status, void * args)
+{
+        (void)event;
+        (void)exec_status;
+        job_t * job = args;
+        (*job).results = reduce_histogram(job);
+
+        clReleaseMemObject((*job).image_buffer);
+        clReleaseMemObject((*job).output_buffer);
 }
 
 int generate_histogram(clinfo_t clinfo
@@ -60,6 +75,7 @@ int generate_histogram(clinfo_t clinfo
 {
         cl_int err;
         cl_event enqueue_event;
+        cl_event fetch_event;
         cl_event * image_event = malloc(sizeof(cl_event));
 
         (*job).image_buffer = push_image(clinfo, image, image_event);
@@ -91,25 +107,24 @@ int generate_histogram(clinfo_t clinfo
 
         printf("Fetch %i / %i elements in results\n", (*job).group_number[0]
                         , (*job).group_number[1]);
-        float * fetched_result = malloc((*job).output_size);
         err = clEnqueueReadBuffer(clinfo.command_queue, (*job).output_buffer
                                   , CL_FALSE, 0, (*job).output_size
-                                  , fetched_result, 1, &enqueue_event, NULL);
+                                  , (*job).fetched_results, 1, &enqueue_event
+                                  , &fetch_event);
         if(err) {
                 fprintf(stderr, "Failed to read output buffer array\n");
                 return EXIT_FAILURE;
         }
 
-        clFinish(clinfo.command_queue);
-        (*job).results = reduce_histogram(fetched_result, job);
-
+        clSetEventCallback(fetch_event, CL_COMPLETE
+                        , &event_callback
+                        , job);
         free(image_event);
-        clReleaseMemObject((*job).image_buffer);
-        clReleaseMemObject((*job).output_buffer);
         return 0;
 }
 
-float * reduce_histogram(float * fetched_result, job_t * job)
+
+float * reduce_histogram(job_t * job)
 {
         float * reduced = malloc(sizeof(float) * VECTOR_SIZE
                         * (*job).result_size[0] * (*job).result_size[1]);
@@ -122,7 +137,7 @@ float * reduce_histogram(float * fetched_result, job_t * job)
                                 int index_reduced = y * (*job).result_size[0]
                                         * VECTOR_SIZE
                                         + x * VECTOR_SIZE + i;
-                                reduced[index_reduced] = fetched_result[index];
+                                reduced[index_reduced] = (*job).fetched_results[index];
                         }
                 }
         }
