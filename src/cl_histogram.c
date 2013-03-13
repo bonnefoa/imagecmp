@@ -117,11 +117,11 @@ float * reduce_histogram(float * fetched_result, job_t * job)
                 for(int x = 0; x < (*job).result_size[0]; x++){
                         for(int i = 0; i < VECTOR_SIZE; i++) {
                                 int index = y * (*job).group_number[0]
-                                        * x * (*job).group_number[1]
-                                        * VECTOR_SIZE + i;
+                                        * VECTOR_SIZE
+                                        + x * VECTOR_SIZE + i;
                                 int index_reduced = y * (*job).result_size[0]
-                                        * x * (*job).result_size[1]
-                                        * VECTOR_SIZE + i;
+                                        * VECTOR_SIZE
+                                        + x * VECTOR_SIZE + i;
                                 reduced[index_reduced] = fetched_result[index];
                         }
                 }

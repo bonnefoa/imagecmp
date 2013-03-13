@@ -78,15 +78,15 @@ unsigned char spilled_fill(int x, int y, int c)
         (void)y;
         switch (c) {
         case 0 :
-                if (x < 16)
+                if (x < VECTOR_SIZE)
                         return 0;
                 return 254;
         case 1 :
-                if (x < 16)
+                if (x < VECTOR_SIZE)
                         return 51;
                 return 204;
         case 2 :
-                if (x < 16)
+                if (x < VECTOR_SIZE)
                         return 102;
                 return 153;
         }
@@ -200,7 +200,8 @@ START_TEST (test_inegal_size)
         float * results = (*job).results;
         for(int y = 0; y < (*job).result_size[1]; y++) {
                 for(int x = 0; x < (*job).result_size[0]; x++) {
-                        int index = y * (*job).result_size[0] * 16 + x * (*job).result_size[1] * 16;
+                        int index = y * (*job).result_size[0] * VECTOR_SIZE
+                                + x * VECTOR_SIZE;
                         assert_float_equals(results[index + 0 * BUCKET_NUMBER], 1.f);
                         assert_float_equals(results[index + 1 * BUCKET_NUMBER + 1], 1.f);
                         assert_float_equals(results[index + 2 * BUCKET_NUMBER + 4], 1.f);
@@ -211,8 +212,8 @@ END_TEST
 
 START_TEST (test_histogram_distance)
 {
-        float * histo_1 = malloc(sizeof(float) * 16);
-        float * histo_2 = malloc(sizeof(float) * 16);
+        float * histo_1 = malloc(sizeof(float) * VECTOR_SIZE);
+        float * histo_2 = malloc(sizeof(float) * VECTOR_SIZE);
         mark_point();
         for(unsigned int i = 0; i < 15; i++) {
                 histo_1[i] = 0.f;
