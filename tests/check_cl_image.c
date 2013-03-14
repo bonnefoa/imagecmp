@@ -21,6 +21,8 @@ void setup (void)
 {
         job = job_init();
         image = image_init();
+        (*job).image = image;
+        (*image).path = "test_image";
         clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
 }
 
@@ -28,7 +30,6 @@ void teardown (void)
 {
         clinfo_free(clinfo);
         job_free(job);
-        image_free(image);
 }
 
 void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int))
@@ -118,7 +119,6 @@ START_TEST (test_histogram_simple)
                 ck_assert_int_eq(pixels[i + 2], 0);
         }
 
-        init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
 
@@ -138,7 +138,6 @@ END_TEST
 START_TEST (test_histogram_blue_green)
 {
         fill_rgba_pixels(&blue_green_fill);
-        init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
         check_blue_green_results((*job).results);
@@ -149,7 +148,6 @@ START_TEST (test_spilled_histogram)
 {
         fill_rgba_pixels(&spilled_fill);
 
-        init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
 
@@ -199,7 +197,6 @@ START_TEST (test_inegal_size)
         width = 2000;
         height = 3500;
         fill_rgba_pixels(&blue_green_fill);
-        init_job_from_image(clinfo, image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
         float * results = (*job).results;

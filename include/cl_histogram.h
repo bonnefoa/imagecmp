@@ -9,15 +9,17 @@
 #include <cl_util.h>
 
 typedef struct job {
+        char * name;
         size_t global_size[2];
         size_t local_size[2];
         int group_number[2];
         int result_size[2];
-        cl_mem output_buffer;
-        cl_mem image_buffer;
+        cl_mem * output_buffer;
+        cl_mem * image_buffer;
         size_t output_size;
         float * results;
         float * fetched_results;
+        image_t * image;
 } job_t;
 
 job_t * job_init();

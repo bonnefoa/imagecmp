@@ -9,11 +9,14 @@ image_t * image_init()
         image_t * image = malloc(sizeof(image_t*));
         (*image).pixels = malloc(sizeof(unsigned char **));
         *(*image).pixels = NULL;
+        (*image).path = "";
         return image;
 }
 
 void image_free(image_t * image)
 {
+        if(image == NULL)
+                return;
         free((*(*image).pixels));
         free((*image).pixels);
         free(image);

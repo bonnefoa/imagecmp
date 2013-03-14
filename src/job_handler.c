@@ -7,18 +7,27 @@ list_t * process_files(list_t * files, float threshold)
         list_t * histograms = NULL;
         list_t * current = files;
         list_t * lst_files = NULL;
+        list_t * job_waits = NULL;
         while(current != NULL) {
                 char * file = (*current).value;
                 current = (*current).next;
                 job_t * job = job_init();
                 generate_histogram_from_file(file, clinfo, job);
+                list_append(job_waits, job);
+        }
+        clFinish(clinfo.command_queue);
+
+        current = job_waits;
+        while(current != NULL) {
+                job_t * job = (*current).value;
                 histogram_t * histo = malloc(sizeof(histogram_t));
-                (*histo).file = file;
+                (*histo).file = (*job).name;
                 int size = (*job).result_size[0] * (*job).result_size[1];
                 (*histo).results = histogram_average((*job).results, size);
                 histograms = list_append(histograms, histo);
                 job_free(job);
         }
+
         clinfo_free(clinfo);
         current = histograms;
         while(current != NULL) {
