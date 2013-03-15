@@ -29,15 +29,20 @@ list_t * process_files(list_t * files, float threshold)
                 current = (*current).next;
                 job_t * job = job_init();
                 generate_histogram_from_file(file, clinfo, job);
-                list_append(job_waits, job);
+                clFlush(clinfo.command_queue);
+                job_waits = list_append(job_waits, job);
         }
+        printf("All job submitted, waiting \n");
         clFinish(clinfo.command_queue);
+        printf("Job finished, processing results\n");
 
         current = job_waits;
         while(current != NULL) {
                 job_t * job = (*current).value;
-                histogram_t * histo = malloc(sizeof(histogram_t));
-                (*histo).file = (*job).name;
+                current = (*current).next;
+                histogram_t * histo = histogram_init();
+                (*histo).file = malloc(strlen((*job).name));
+                strcpy((*histo).file, (*job).name);
                 int size = (*job).result_size[0] * (*job).result_size[1];
                 (*histo).results = histogram_average((*job).results, size);
                 histograms = list_append(histograms, histo);

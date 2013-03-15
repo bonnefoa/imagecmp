@@ -7,7 +7,7 @@
 job_t * job_init()
 {
         job_t *job = malloc(sizeof(job_t));
-        (*job).name = malloc(sizeof(char *));
+        (*job).name = NULL;
         (*job).results = NULL;
         (*job).fetched_results = NULL;
         (*job).image_buffer = malloc(sizeof(cl_mem));
@@ -30,6 +30,7 @@ int init_job_from_image(clinfo_t clinfo, image_t * image, job_t * job)
 {
         cl_int err;
         (*job).image = image;
+        (*job).name = malloc(strlen((*image).path));
         strcpy((*job).name, (*image).path);
         for (int i = 0; i < 2; i++) {
                 (*job).global_size[i] = round_up_power_of_two((*image).size[i]);
@@ -85,16 +86,16 @@ int generate_histogram(clinfo_t clinfo
                       , image_t * image, job_t * job)
 {
         cl_int err;
-        cl_event image_event;
-        cl_event enqueue_event;
-        cl_event fetch_event;
+        cl_event * image_event = malloc(sizeof(cl_event));
+        cl_event * enqueue_event = malloc(sizeof(cl_event));
+        cl_event * fetch_event = malloc(sizeof(cl_event));
 
         err = init_job_from_image(clinfo, image, job);
         if(err == EXIT_FAILURE) {
                 return EXIT_FAILURE;
         }
 
-        (*job).image_buffer = push_image(clinfo, image, &image_event);
+        (*job).image_buffer = push_image(clinfo, image, image_event);
         if((*job).image_buffer == NULL) {
                 return EXIT_FAILURE;
         }
@@ -115,7 +116,7 @@ int generate_histogram(clinfo_t clinfo
         err = clEnqueueNDRangeKernel(clinfo.command_queue, clinfo.kernel, 2
                                      , NULL, (*job).global_size
                                      , (*job).local_size
-                                     , 1, &image_event, &enqueue_event);
+                                     , 1, image_event, enqueue_event);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Error on kernel enqueue %i\n", err);
                 return EXIT_FAILURE;
@@ -125,15 +126,14 @@ int generate_histogram(clinfo_t clinfo
                         , (*job).group_number[1]);
         err = clEnqueueReadBuffer(clinfo.command_queue, *(*job).output_buffer
                                   , CL_FALSE, 0, (*job).output_size
-                                  , (*job).fetched_results, 1, &enqueue_event
-                                  , &fetch_event);
+                                  , (*job).fetched_results, 1, enqueue_event
+                                  , fetch_event);
         if(err) {
                 fprintf(stderr, "Failed to read output buffer array\n");
                 return EXIT_FAILURE;
         }
 
-        clSetEventCallback(fetch_event, CL_COMPLETE, &event_callback, job);
-        clFlush(clinfo.command_queue);
+        clSetEventCallback(*fetch_event, CL_COMPLETE, &event_callback, job);
         return 0;
 }
 
