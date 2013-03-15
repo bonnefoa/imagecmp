@@ -1,4 +1,20 @@
 #include <job_handler.h>
+#include <string.h>
+
+histogram_t * histogram_init()
+{
+        histogram_t * histo = malloc(sizeof(histogram_t));
+        (*histo).file = NULL;
+        (*histo).results = malloc(sizeof(float*));
+        return histo;
+}
+
+void histogram_free(histogram_t * histo)
+{
+        free((*histo).file);
+        free((*histo).results);
+        free(histo);
+}
 
 list_t * process_files(list_t * files, float threshold)
 {
