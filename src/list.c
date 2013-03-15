@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <dirent.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 list_t * list_create_node()
 {
         struct list *list;
@@ -69,6 +72,11 @@ list_t * list_files(const char * dir_path)
                         strncpy(fullPath, dir_path, sizeStr);
                         strcat(fullPath, "/");
                         strcat(fullPath, ent->d_name);
+                        struct stat st;
+                        stat(fullPath, &st);
+                        if(!S_ISREG(st.st_mode)) {
+                                continue;
+                        }
                         list = list_append(list, fullPath);
                 }
                 closedir (dir);
