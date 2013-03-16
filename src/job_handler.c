@@ -32,13 +32,12 @@ list_t * process_files(list_t * files, float threshold)
                 clFlush(clinfo.command_queue);
                 job_waits = list_append(job_waits, job);
         }
-        printf("All job submitted, waiting \n");
-        clFinish(clinfo.command_queue);
-        printf("Job finished, processing results\n");
+        printf("All job submitted, processing results\n");
 
         current = job_waits;
         while(current != NULL) {
                 job_t * job = (*current).value;
+                clWaitForEvents(1, (*job).fetch_event);
                 current = (*current).next;
                 histogram_t * histo = histogram_init();
                 (*histo).file = malloc(strlen((*job).name));
