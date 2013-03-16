@@ -107,5 +107,9 @@ image_t * readImage(image_t * image)
         jpeg_finish_decompress(&cinfo);
         jpeg_destroy_decompress(&cinfo);
         fclose(infile);
+
+        free(error_mgr);
+        free(buffer[0]);
+        free(buffer);
         return image;
 }

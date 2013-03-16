@@ -10,8 +10,8 @@ job_t * job_init()
         (*job).name = NULL;
         (*job).results = NULL;
         (*job).fetched_results = NULL;
-        (*job).image_buffer = malloc(sizeof(cl_mem));
-        (*job).output_buffer = malloc(sizeof(cl_mem));
+        (*job).image_buffer = NULL;
+        (*job).output_buffer = NULL;
         return job;
 }
 
@@ -44,6 +44,7 @@ int init_job_from_image(clinfo_t clinfo, image_t * image, job_t * job)
         (*job).results = malloc(sizeof(float) * (*job).result_size[0]
                         * (*job).result_size[1] * VECTOR_SIZE);
 
+        (*job).output_buffer = malloc(sizeof(cl_mem));
         *(*job).output_buffer = clCreateBuffer(clinfo.context
                                              , CL_MEM_WRITE_ONLY, (*job).output_size, NULL, &err);
         if (err != CL_SUCCESS) {
@@ -77,8 +78,6 @@ void event_callback(cl_event event, cl_int exec_status, void * args)
         printf("Releasing buffer\n");
         clReleaseMemObject(*(*job).image_buffer);
         clReleaseMemObject(*(*job).output_buffer);
-        image_free((*job).image);
-        (*job).image = NULL;
         printf("Callback finished\n");
 }
 
@@ -92,11 +91,13 @@ int generate_histogram(clinfo_t clinfo
 
         err = init_job_from_image(clinfo, image, job);
         if(err == EXIT_FAILURE) {
+                fprintf(stderr, "Could not init job from image %i\n", err);
                 return EXIT_FAILURE;
         }
 
         (*job).image_buffer = push_image(clinfo, image, image_event);
         if((*job).image_buffer == NULL) {
+                fprintf(stderr, "Could not copy image to buffer %i\n", err);
                 return EXIT_FAILURE;
         }
 
