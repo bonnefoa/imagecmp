@@ -6,6 +6,7 @@ TESTDIR = tests
 
 CC      = clang
 CCFLAGS = -I$(IDIR) -Wall -Wextra -Werror -pedantic -std=c99
+TEST_CCFLAGS = -I$(IDIR) -Wall -Wextra -pedantic -std=c99 
 
 LIBS = -ljpeg -lOpenCL
 TEST_LIBS = $(LIBS) -lcheck
@@ -24,16 +25,16 @@ $(ODIR)/%.o: $(SRCDIR)/%.c
 
 $(ODIR)/%.o: $(TESTDIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) -c -o $@ $< $(CCFLAGS)
+	$(CC) -c -o $@ $< $(TEST_CCFLAGS)
 
 main: $(MAIN)
 	$(CC) -o $@ $^ $(CCFLAGS) $(LIBS)
 
 check_cl_image: $(ODIR)/check_cl_image.o $(OBJ) 
-	$(CC) -o $@ $^ $(CCFLAGS) $(TEST_LIBS) 
+	$(CC) -o $@ $^ $(TEST_CCFLAGS) $(TEST_LIBS) 
 
 check_job_handler: $(ODIR)/check_job_handler.o $(OBJ) 
-	$(CC) -o $@ $^ $(CCFLAGS) $(TEST_LIBS) 
+	$(CC) -o $@ $^ $(TEST_CCFLAGS) $(TEST_LIBS) 
 
 .PHONY: clean
 
