@@ -20,6 +20,10 @@ typedef struct job {
         float * results;
         float * fetched_results;
         image_t * image;
+        cl_event * image_event;
+        cl_event * enqueue_event;
+        cl_event * fetch_event;
+
 } job_t;
 
 job_t * job_init();
