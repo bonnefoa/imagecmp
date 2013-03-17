@@ -15,6 +15,7 @@ job_t * job_init()
         (*job).image_event   = NULL;
         (*job).enqueue_event = NULL;
         (*job).fetch_event   = NULL;
+        (*job).image   = NULL;
         return job;
 }
 
@@ -66,7 +67,8 @@ int generate_histogram_from_file(char * filename
         int code;
         image_t * image = image_init();
         (*image).path = filename;
-        image = readImage(image);
+        printf("Processing file %s\n", filename);
+        image = read_image(image);
         printf("Processing image %s, width=%i, height=%i\n", filename
                , (*image).size[0], (*image).size[1]);
         code = generate_histogram(clinfo, image, job);

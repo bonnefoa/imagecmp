@@ -8,7 +8,7 @@ CC      = clang
 CCFLAGS = -I$(IDIR) -Wall -Wextra -Werror -pedantic -std=c99
 TEST_CCFLAGS = -I$(IDIR) -Wall -Wextra -pedantic -std=c99 
 
-LIBS = -ljpeg -lOpenCL
+LIBS = -ljpeg -lOpenCL -lpng
 TEST_LIBS = $(LIBS) -lcheck
 
 _OBJ = cl_util.o list.o image_utils.o cl_histogram.o job_handler.o

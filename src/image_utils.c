@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <jpeglib.h>
 #include <string.h>
+#include <png.h>
+#include <zlib.h>
 
 image_t * image_init()
 {
@@ -18,7 +20,8 @@ void image_free(image_t * image)
 {
         if(image == NULL)
                 return;
-        free((*(*image).pixels));
+        if((*image).pixels)
+                free((*(*image).pixels));
         free((*image).pixels);
         free((*image).image_fmt);
         free(image);
@@ -61,27 +64,86 @@ void write_jpeg_image(char * dest, image_t * image)
         jpeg_destroy_compress(&cinfo);
 }
 
-
-image_t * readImage(image_t * image)
+image_t * read_image(image_t * image)
 {
-        struct jpeg_decompress_struct cinfo;
-        struct jpeg_error_mgr * error_mgr = malloc(sizeof(struct jpeg_error_mgr));
-
+        printf("Reading file %s\n", (*image).path);
         FILE * infile;
-        JSAMPARRAY buffer;
-        int row_stride;
-
         if ((infile = fopen((*image).path, "rb")) == NULL) {
                 fprintf(stderr, "can't open %s\n", (*image).path);
                 return NULL;
         }
+        unsigned char sig[8];
+        fread(sig, 1, 8, infile);
+        if (png_sig_cmp(sig, 0, 8) == 0) {
+                image = read_png_image(image, infile);
+        } else {
+                fseek(infile, 0, 0);
+                image = read_jpeg_image(image, infile);
+        }
+        fclose(infile);
+        return image;
+}
 
+image_t * read_png_image(image_t * image, FILE * infile)
+{
+        int bit_depth;
+        int color_type;
+        png_uint_32  i, rowbytes;
+        png_uint_32 width;
+        png_uint_32 height;
+        png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING
+                        , NULL, NULL, NULL);
+        png_infop info_ptr = png_create_info_struct(png_ptr);
+
+        png_init_io(png_ptr, infile);
+        png_set_sig_bytes(png_ptr, 8);
+        png_read_info(png_ptr, info_ptr);
+        png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth,
+                        &color_type, NULL, NULL, NULL);
+        (*image).size[0] = width;
+        (*image).size[1] = height;
+        if (color_type == PNG_COLOR_TYPE_PALETTE)
+                png_set_expand(png_ptr);
+        if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+                png_set_expand(png_ptr);
+        if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+                png_set_expand(png_ptr);
+        if (bit_depth == 16)
+                png_set_strip_16(png_ptr);
+        if (color_type == PNG_COLOR_TYPE_GRAY ||
+                        color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+                png_set_gray_to_rgb(png_ptr);
+
+        (*(*image).image_fmt).image_channel_order = CL_RGBA;
+        (*(*image).image_fmt).image_channel_data_type = CL_UNSIGNED_INT8;
+
+        png_bytep row_pointers[height];
+        png_read_update_info(png_ptr, info_ptr);
+        rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+
+        size_t pixels_size = sizeof(unsigned char) * width * height * RGBA_CHANNEL;
+        *(*image).pixels = malloc(pixels_size);
+        memset(*(*image).pixels, 0, pixels_size);
+        for (i = 0;  i < height;  ++i)
+                row_pointers[i] = *(*image).pixels + i*rowbytes;
+        png_read_image(png_ptr, row_pointers);
+
+        png_read_end(png_ptr, NULL);
+        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+        return image;
+}
+
+image_t * read_jpeg_image(image_t * image, FILE * infile)
+{
+        struct jpeg_decompress_struct cinfo;
+        struct jpeg_error_mgr * error_mgr = malloc(sizeof(struct jpeg_error_mgr));
+        JSAMPARRAY buffer;
+        int row_stride;
         cinfo.err = jpeg_std_error(error_mgr);
         jpeg_create_decompress(&cinfo);
         jpeg_stdio_src(&cinfo, infile);
         jpeg_read_header(&cinfo, TRUE);
         jpeg_start_decompress(&cinfo);
-
         (*image).size[0] = cinfo.output_width;
         (*image).size[1] = cinfo.output_height;
         (*(*image).image_fmt).image_channel_order = CL_RGBA;
@@ -89,12 +151,9 @@ image_t * readImage(image_t * image)
         row_stride = cinfo.output_width * RGB_CHANNEL;
         buffer = (JSAMPARRAY)malloc(sizeof(JSAMPROW));
         buffer[0] = (JSAMPROW)malloc(sizeof(JSAMPLE) * row_stride);
-
         unsigned char ** pixels = ((*image).pixels);
         *pixels = malloc(sizeof(unsigned char) * cinfo.output_width * cinfo.output_height * 4);
-
         long counter = 0;
-
         while (cinfo.output_scanline < cinfo.output_height) {
                 jpeg_read_scanlines(&cinfo, buffer, 1);
                 for(unsigned int i = 0; i < cinfo.output_width; i++) {
@@ -106,11 +165,8 @@ image_t * readImage(image_t * image)
                 }
                 counter += cinfo.output_width * RGBA_CHANNEL;
         }
-
         jpeg_finish_decompress(&cinfo);
         jpeg_destroy_decompress(&cinfo);
-        fclose(infile);
-
         free(error_mgr);
         free(buffer[0]);
         free(buffer);
