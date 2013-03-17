@@ -28,12 +28,12 @@ void create_test_file(char * path, int r, int g, int b)
 {
         width = 512;
         height = 512;
-        (*image).path = path;
-        (*image).size[0] = width;
-        (*image).size[1] = height;
-        unsigned char ** pixels = (*image).pixels;
-        *pixels = malloc(sizeof(unsigned char) * (*image).size[0]
-                         * (*image).size[1] * RGB_CHANNEL);
+        image->path = path;
+        image->size[0] = width;
+        image->size[1] = height;
+        unsigned char ** pixels = image->pixels;
+        *pixels = malloc(sizeof(unsigned char) * image->size[0]
+                         * image->size[1] * RGB_CHANNEL);
         for(int y = 0; y < height; y++) {
                 for(int x = 0; x < width; x++) {
                         int index = y * width * RGB_CHANNEL + x * RGB_CHANNEL;
@@ -56,9 +56,9 @@ START_TEST (test_job_handler)
         files = list_append(files, path_1);
         files = list_append(files, path_2);
         list_t * similar = process_files(files, 100.f);
-        list_t * inner_list = (*similar).value;
-        ck_assert_str_eq((*inner_list).value, path_1);
-        ck_assert_str_eq((*((*inner_list).next)).value, path_2);
+        list_t * inner_list = similar->value;
+        ck_assert_str_eq(inner_list->value, path_1);
+        ck_assert_str_eq(inner_list->next->value, path_2);
         similar = process_files(files, 1.f);
         fail_unless(similar == NULL, "Expected null result with no match");
 }

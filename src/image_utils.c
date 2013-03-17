@@ -45,10 +45,10 @@ unsigned char * convert_to_rgba(unsigned char * source, unsigned int width, unsi
 
 image_t * read_image(image_t * image)
 {
-        printf("Reading file %s\n", (*image).path);
+        printf("Reading file %s\n", image->path);
         FILE * infile;
         if ((infile = fopen(image->path, "rb")) == NULL) {
-                fprintf(stderr, "can't open %s\n", (*image).path);
+                fprintf(stderr, "can't open %s\n", image->path);
                 return NULL;
         }
         unsigned char sig[8];
@@ -79,15 +79,15 @@ void write_png_image(char * dest, image_t * image)
         png_init_io(png_ptr, outfile);
         png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 
-        png_set_IHDR(png_ptr, info_ptr, (*image).size[0],
-                        (*image).size[1], 8,
+        png_set_IHDR(png_ptr, info_ptr, image->size[0],
+                        image->size[1], 8,
                         PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
                         PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
         png_write_info(png_ptr, info_ptr);
 
-        for(int i = 0; i < (*image).size[1]; i++) {
+        for(int i = 0; i < image->size[1]; i++) {
                 png_write_row(png_ptr
-                                , &(*image->pixels)[i * (*image).size[0] * RGB_CHANNEL]);
+                                , &(*image->pixels)[i * image->size[0] * RGB_CHANNEL]);
         }
         png_write_end(png_ptr, NULL);
         fclose(outfile);
@@ -109,8 +109,8 @@ image_t * read_png_image(image_t * image, FILE * infile)
         png_read_info(png_ptr, info_ptr);
         png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth,
                         &color_type, NULL, NULL, NULL);
-        (*image).size[0] = width;
-        (*image).size[1] = height;
+        image->size[0] = width;
+        image->size[1] = height;
         if (color_type == PNG_COLOR_TYPE_PALETTE)
                 png_set_expand(png_ptr);
         if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
@@ -123,8 +123,8 @@ image_t * read_png_image(image_t * image, FILE * infile)
                         color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
                 png_set_gray_to_rgb(png_ptr);
 
-        (*(*image).image_fmt).image_channel_order = CL_RGBA;
-        (*(*image).image_fmt).image_channel_data_type = CL_UNSIGNED_INT8;
+        image->image_fmt->image_channel_order = CL_RGBA;
+        image->image_fmt->image_channel_data_type = CL_UNSIGNED_INT8;
 
         png_bytep row_pointers[height];
         png_read_update_info(png_ptr, info_ptr);
@@ -156,8 +156,8 @@ void write_jpeg_image(char * dest, image_t * image)
         jpeg_create_compress(&cinfo);
         jpeg_stdio_dest(&cinfo, outfile);
 
-        cinfo.image_width      = (*image).size[0];
-        cinfo.image_height     = (*image).size[1];
+        cinfo.image_width      = image->size[0];
+        cinfo.image_height     = image->size[1];
         cinfo.input_components = RGB_CHANNEL;
         cinfo.in_color_space   = JCS_RGB;
 
@@ -167,7 +167,7 @@ void write_jpeg_image(char * dest, image_t * image)
 
         JSAMPROW row_pointer;
         int row_stride = cinfo.image_width * RGB_CHANNEL;
-        unsigned char * pixels = *((*image).pixels);
+        unsigned char * pixels = *(image->pixels);
 
         while (cinfo.next_scanline < cinfo.image_height) {
                 row_pointer = (JSAMPROW) &pixels[cinfo.next_scanline*row_stride];
@@ -190,8 +190,8 @@ image_t * read_jpeg_image(image_t * image, FILE * infile)
         jpeg_stdio_src(&cinfo, infile);
         jpeg_read_header(&cinfo, TRUE);
         jpeg_start_decompress(&cinfo);
-        (*image).size[0] = cinfo.output_width;
-        (*image).size[1] = cinfo.output_height;
+        image->size[0] = cinfo.output_width;
+        image->size[1] = cinfo.output_height;
         row_stride = cinfo.output_width * RGB_CHANNEL;
         buffer = (JSAMPARRAY)malloc(sizeof(JSAMPROW));
         buffer[0] = (JSAMPROW)malloc(sizeof(JSAMPLE) * row_stride);
@@ -210,8 +210,8 @@ image_t * read_jpeg_image(image_t * image, FILE * infile)
         jpeg_finish_decompress(&cinfo);
         jpeg_destroy_decompress(&cinfo);
 
-        (*image->image_fmt).image_channel_order = CL_RGBA;
-        (*image->image_fmt).image_channel_data_type = CL_UNSIGNED_INT8;
+        image->image_fmt->image_channel_order = CL_RGBA;
+        image->image_fmt->image_channel_data_type = CL_UNSIGNED_INT8;
 
         *image->pixels = convert_to_rgba(lines, cinfo.output_width, cinfo.output_height);
         free(error_mgr);

@@ -14,11 +14,11 @@ int main(int argc, char * argv[])
         while(current != NULL) {
                 list_t * sublist = (*current).value;
                 while (sublist != NULL) {
-                        printf("%s ", (char *)(*sublist).value);
-                        sublist = (*sublist).next;
+                        printf("%s ", (char *)sublist->value);
+                        sublist = sublist->next;
                 }
                 printf("\n");
-                current = (*current).next;
+                current = current->next;
         }
         return 0;
 }

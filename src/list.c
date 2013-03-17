@@ -49,8 +49,8 @@ list_t * list_concat(list_t * list, list_t * list_2)
                 return list_2;
         }
         list_t * current = list;
-        while((*current).next != NULL) {
-                current = (*current).next;
+        while(current->next != NULL) {
+                current = current->next;
         }
         current->next = list_2;
         return list;

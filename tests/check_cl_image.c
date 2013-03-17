@@ -21,10 +21,10 @@ void setup (void)
 {
         job = job_init();
         image = image_init();
-        (*job).image = image;
-        (*image->image_fmt).image_channel_order = CL_RGBA;
-        (*image->image_fmt).image_channel_data_type = CL_UNSIGNED_INT8;
-        (*image).path = "test_image";
+        job->image = image;
+        image->image_fmt->image_channel_order = CL_RGBA;
+        image->image_fmt->image_channel_data_type = CL_UNSIGNED_INT8;
+        image->path = "test_image";
         clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
 }
 
@@ -36,7 +36,7 @@ void teardown (void)
 
 void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int))
 {
-        unsigned char ** pixels = (*image).pixels;
+        unsigned char ** pixels = image->pixels;
         *pixels = malloc(sizeof(unsigned char) * width * height * RGBA_CHANNEL);
         for(int y = 0; y < height; y++) {
                 for(int x = 0; x < width; x++) {
@@ -47,9 +47,9 @@ void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int))
                         (*pixels)[index + 3] = 0;
                 }
         }
-        (*image).path = "test";
-        (*image).size[0] = width;
-        (*image).size[1] = height;
+        image->path = "test";
+        image->size[0] = width;
+        image->size[1] = height;
 }
 
 unsigned char zero_fill(int x, int y, int c)
@@ -114,7 +114,7 @@ END_TEST
 START_TEST (test_histogram_simple)
 {
         fill_rgba_pixels(&zero_fill);
-        unsigned char * pixels = *(*image).pixels;
+        unsigned char * pixels = *image->pixels;
         for(int i = 0; i < width * height * RGB_CHANNEL; i+=4) {
                 ck_assert_int_eq(pixels[i], 0);
                 ck_assert_int_eq(pixels[i + 1], 0);
@@ -124,15 +124,15 @@ START_TEST (test_histogram_simple)
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
 
-        ck_assert_int_eq((*job).result_size[0], 1);
-        ck_assert_int_eq((*job).result_size[1], 1);
+        ck_assert_int_eq(job->result_size[0], 1);
+        ck_assert_int_eq(job->result_size[1], 1);
 
         for(int c = 0; c < RGB_CHANNEL; c++) {
-                assert_float_equals((*job).results[c * BUCKET_NUMBER], 1.f);
-                assert_float_equals((*job).results[c * BUCKET_NUMBER + 1], 0.f);
-                assert_float_equals((*job).results[c * BUCKET_NUMBER + 2], 0.f);
-                assert_float_equals((*job).results[c * BUCKET_NUMBER + 3], 0.f);
-                assert_float_equals((*job).results[c * BUCKET_NUMBER + 4], 0.f);
+                assert_float_equals(job->results[c * BUCKET_NUMBER], 1.f);
+                assert_float_equals(job->results[c * BUCKET_NUMBER + 1], 0.f);
+                assert_float_equals(job->results[c * BUCKET_NUMBER + 2], 0.f);
+                assert_float_equals(job->results[c * BUCKET_NUMBER + 3], 0.f);
+                assert_float_equals(job->results[c * BUCKET_NUMBER + 4], 0.f);
         }
 }
 END_TEST
@@ -142,7 +142,7 @@ START_TEST (test_histogram_blue_green)
         fill_rgba_pixels(&blue_green_fill);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
-        check_blue_green_results((*job).results);
+        check_blue_green_results(job->results);
 }
 END_TEST
 
@@ -153,7 +153,7 @@ START_TEST (test_spilled_histogram)
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
 
-        float * results = (*job).results;
+        float * results = job->results;
         assert_float_equals(results[0 * BUCKET_NUMBER], 0.5f);
         assert_float_equals(results[0 * BUCKET_NUMBER + 4], 0.5f);
         assert_float_equals(results[1 * BUCKET_NUMBER + 1], 0.5f);
@@ -167,12 +167,12 @@ void create_test_file(char * path, unsigned char (*fill_funct)(int, int, int))
 {
         width = 512;
         height = 512;
-        (*image).path = path;
-        (*image).size[0] = width;
-        (*image).size[1] = height;
-        unsigned char ** pixels = (*image).pixels;
-        *pixels = malloc(sizeof(unsigned char) * (*image).size[0]
-                        * (*image).size[1] * RGB_CHANNEL);
+        image->path = path;
+        image->size[0] = width;
+        image->size[1] = height;
+        unsigned char ** pixels = image->pixels;
+        *pixels = malloc(sizeof(unsigned char) * image->size[0]
+                        * image->size[1] * RGB_CHANNEL);
         for(int y = 0; y < height; y++) {
                 for(int x = 0; x < width; x++) {
                         int index = y * width * RGB_CHANNEL + x * RGB_CHANNEL;
@@ -190,7 +190,7 @@ START_TEST (test_read_jpeg_from_file)
         write_jpeg_image(path, image);
         generate_histogram_from_file(path, clinfo, job);
         clFinish(clinfo.command_queue);
-        check_blue_green_results((*job).results);
+        check_blue_green_results(job->results);
 }
 END_TEST
 
@@ -201,7 +201,7 @@ START_TEST (test_read_png_from_file)
         write_png_image(path, image);
         generate_histogram_from_file(path, clinfo, job);
         clFinish(clinfo.command_queue);
-        check_blue_green_results((*job).results);
+        check_blue_green_results(job->results);
 }
 END_TEST
 
@@ -212,10 +212,10 @@ START_TEST (test_inegal_size)
         fill_rgba_pixels(&blue_green_fill);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
-        float * results = (*job).results;
-        for(int y = 0; y < (*job).result_size[1]; y++) {
-                for(int x = 0; x < (*job).result_size[0]; x++) {
-                        int index = y * (*job).result_size[0] * VECTOR_SIZE
+        float * results = job->results;
+        for(int y = 0; y < job->result_size[1]; y++) {
+                for(int x = 0; x < job->result_size[0]; x++) {
+                        int index = y * job->result_size[0] * VECTOR_SIZE
                                 + x * VECTOR_SIZE;
                         assert_float_equals(results[index + 0 * BUCKET_NUMBER], 1.f);
                         assert_float_equals(results[index + 1 * BUCKET_NUMBER + 1], 1.f);

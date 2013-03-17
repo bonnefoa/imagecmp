@@ -169,19 +169,19 @@ cl_mem * push_image(clinfo_t clinfo, image_t * image, cl_event * event)
         cl_mem * image_buffer = malloc(sizeof(cl_mem));
         cl_int err;
         *image_buffer = clCreateImage2D(clinfo.context, CL_MEM_READ_ONLY
-                                      , (*image).image_fmt, (*image).size[0]
-                                      , (*image).size[1], 0, 0, &err);
+                                      , image->image_fmt, image->size[0]
+                                      , image->size[1], 0, 0, &err);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to create image buffer, %i\n", err);
                 return NULL;
         }
         size_t origin[] = {0,0,0};
-        size_t region[] = {(*image).size[0], (*image).size[1], 1};
-        printf("Pushing image of size %i/%i\n", (*image).size[0]
-                        , (*image).size[1]);
+        size_t region[] = {image->size[0], image->size[1], 1};
+        printf("Pushing image of size %i/%i\n", image->size[0]
+                        , image->size[1]);
         err = clEnqueueWriteImage(clinfo.command_queue, *image_buffer
                                   , CL_FALSE, origin, region
-                                  , 0, 0, *(*image).pixels, 0, NULL, event);
+                                  , 0, 0, *image->pixels, 0, NULL, event);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to write image to memory %i\n", err);
                 return NULL;
