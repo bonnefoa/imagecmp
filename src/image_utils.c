@@ -10,6 +10,7 @@ image_t * image_init()
         (*image).pixels = malloc(sizeof(unsigned char **));
         *(*image).pixels = NULL;
         (*image).path = "";
+        (*image).image_fmt = malloc(sizeof(cl_image_format*));
         return image;
 }
 
@@ -19,6 +20,7 @@ void image_free(image_t * image)
                 return;
         free((*(*image).pixels));
         free((*image).pixels);
+        free((*image).image_fmt);
         free(image);
 }
 
@@ -82,7 +84,8 @@ image_t * readImage(image_t * image)
 
         (*image).size[0] = cinfo.output_width;
         (*image).size[1] = cinfo.output_height;
-
+        (*(*image).image_fmt).image_channel_order = CL_RGBA;
+        (*(*image).image_fmt).image_channel_data_type = CL_UNSIGNED_INT8;
         row_stride = cinfo.output_width * RGB_CHANNEL;
         buffer = (JSAMPARRAY)malloc(sizeof(JSAMPROW));
         buffer[0] = (JSAMPROW)malloc(sizeof(JSAMPLE) * row_stride);

@@ -168,11 +168,9 @@ cl_mem * push_image(clinfo_t clinfo, image_t * image, cl_event * event)
 {
         cl_mem * image_buffer = malloc(sizeof(cl_mem));
         cl_int err;
-        cl_image_format img_fmt;
-        img_fmt.image_channel_order = CL_RGBA;
-        img_fmt.image_channel_data_type = CL_UNSIGNED_INT8;
         *image_buffer = clCreateImage2D(clinfo.context, CL_MEM_READ_ONLY
-                                      , &img_fmt, (*image).size[0], (*image).size[1], 0, 0, &err);
+                                      , (*image).image_fmt, (*image).size[0]
+                                      , (*image).size[1], 0, 0, &err);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to create image buffer, %i\n", err);
                 return NULL;
