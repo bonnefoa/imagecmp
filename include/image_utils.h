@@ -18,6 +18,7 @@ image_t * image_init();
 void image_free(image_t * image);
 
 void write_jpeg_image(char * dest, image_t * image);
+void write_png_image(char * dest, image_t * image);
 image_t * read_jpeg_image(image_t * image, FILE * infile);
 image_t * read_png_image(image_t * image, FILE * infile);
 image_t * read_image(image_t * image);

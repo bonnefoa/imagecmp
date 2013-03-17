@@ -22,6 +22,8 @@ void setup (void)
         job = job_init();
         image = image_init();
         (*job).image = image;
+        (*image->image_fmt).image_channel_order = CL_RGBA;
+        (*image->image_fmt).image_channel_data_type = CL_UNSIGNED_INT8;
         (*image).path = "test_image";
         clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
 }
@@ -179,13 +181,24 @@ void create_test_file(char * path, unsigned char (*fill_funct)(int, int, int))
                         (*pixels)[index + 2] = (*fill_funct)(x, y, 2);
                 }
         }
-        write_jpeg_image(path, image);
 }
 
-START_TEST (test_read_from_file)
+START_TEST (test_read_jpeg_from_file)
 {
         char * path = "/tmp/test.jpg";
         create_test_file(path, blue_green_fill);
+        write_jpeg_image(path, image);
+        generate_histogram_from_file(path, clinfo, job);
+        clFinish(clinfo.command_queue);
+        check_blue_green_results((*job).results);
+}
+END_TEST
+
+START_TEST (test_read_png_from_file)
+{
+        char * path = "/tmp/test.png";
+        create_test_file(path, blue_green_fill);
+        write_png_image(path, image);
         generate_histogram_from_file(path, clinfo, job);
         clFinish(clinfo.command_queue);
         check_blue_green_results((*job).results);
@@ -249,10 +262,11 @@ Suite * soragl_suite (void)
         tcase_add_test (tc_core, test_histogram_simple);
         tcase_add_test (tc_core, test_histogram_blue_green);
         tcase_add_test (tc_core, test_spilled_histogram);
-        tcase_add_test (tc_core, test_read_from_file);
         tcase_add_test (tc_core, test_inegal_size);
         tcase_add_test (tc_core, test_histogram_distance);
         tcase_add_test (tc_core, test_histogram_average);
+        tcase_add_test (tc_core, test_read_jpeg_from_file);
+        tcase_add_test (tc_core, test_read_png_from_file);
         suite_add_tcase (s, tc_core);
         return s;
 }

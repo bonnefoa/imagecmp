@@ -21,6 +21,8 @@ job_t * job_init()
 
 void job_free(job_t * job)
 {
+        if(job==NULL)
+                return;
         free((*job).name);
         free((*job).fetched_results);
         free((*job).results);
@@ -31,6 +33,7 @@ void job_free(job_t * job)
         free((*job).fetch_event);
         image_free((*job).image);
         free(job);
+        job = NULL;
 }
 
 int init_job_from_image(clinfo_t clinfo, image_t * image, job_t * job)
