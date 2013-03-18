@@ -128,9 +128,10 @@ clinfo_t clinfo_init(const char * kernelSource, const char * kernel_name)
                 exit( EXIT_FAILURE );
         }
 
-        const char * kernelContent = read_file(kernelSource);
+        const char * kernel_content = read_file(kernelSource);
         clinfo.program = clCreateProgramWithSource(clinfo.context, 1
-                           , &kernelContent, NULL, &err);
+                           , &kernel_content, NULL, &err);
+        free((char*)kernel_content);
         if(!clinfo.program) {
                 fprintf(stderr, "Failed to create program\n");
                 exit( EXIT_FAILURE );
