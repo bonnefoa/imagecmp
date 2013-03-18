@@ -16,7 +16,7 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 MAIN = $(ODIR)/main.o $(OBJ) 
 
-debug: CC += -DDEBUG -g
+debug: CC += -DDEBUG -g -ggdb3 -O0
 debug: main
 
 $(ODIR)/%.o: $(SRCDIR)/%.c

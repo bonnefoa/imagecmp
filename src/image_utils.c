@@ -21,7 +21,7 @@ void image_free(image_t * image)
         if(image == NULL)
                 return;
         if(image->pixels)
-                free((*image->pixels));
+                free(*image->pixels);
         free(image->pixels);
         free(image->image_fmt);
         free(image);
