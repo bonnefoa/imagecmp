@@ -12,10 +12,10 @@ job_t * job_init()
         job->fetched_results = NULL;
         job->image_buffer = NULL;
         job->output_buffer = NULL;
-        job->image_event   = NULL;
-        job->enqueue_event = NULL;
-        job->fetch_event   = NULL;
         job->image   = NULL;
+        job->image_event = malloc(sizeof(cl_event));
+        job->enqueue_event = malloc(sizeof(cl_event));
+        job->fetch_event = malloc(sizeof(cl_event));
         return job;
 }
 
@@ -36,7 +36,7 @@ void job_free(job_t * job)
         job = NULL;
 }
 
-int init_job_from_image(clinfo_t clinfo, image_t * image, job_t * job)
+int init_job_from_image(image_t * image, job_t * job)
 {
         cl_int err;
         job->image = image;
@@ -53,29 +53,7 @@ int init_job_from_image(clinfo_t clinfo, image_t * image, job_t * job)
         job->fetched_results = malloc(job->output_size);
         job->results = malloc(sizeof(float) * job->result_size[0]
                         * job->result_size[1] * VECTOR_SIZE);
-
-        job->output_buffer = malloc(sizeof(cl_mem));
-        *job->output_buffer = clCreateBuffer(clinfo.context
-                                             , CL_MEM_WRITE_ONLY, job->output_size, NULL, &err);
-        if (err != CL_SUCCESS) {
-                fprintf(stderr, "Failed to create buffer\n");
-                return EXIT_FAILURE;
-        }
         return EXIT_SUCCESS;
-}
-
-int generate_histogram_from_file(char * filename
-                              , clinfo_t clinfo, job_t * job)
-{
-        int code;
-        image_t * image = image_init();
-        image->path = filename;
-        printf("Processing file %s\n", filename);
-        image = read_image(image);
-        printf("Processing image %s, width=%i, height=%i\n", filename
-               , image->size[0], image->size[1]);
-        code = generate_histogram(clinfo, image, job);
-        return code;
 }
 
 void event_callback(cl_event event, cl_int exec_status, void * args)
@@ -96,13 +74,12 @@ int generate_histogram(clinfo_t clinfo
                       , image_t * image, job_t * job)
 {
         cl_int err;
-        job->image_event = malloc(sizeof(cl_event));
-        job->enqueue_event = malloc(sizeof(cl_event));
-        job->fetch_event = malloc(sizeof(cl_event));
 
-        err = init_job_from_image(clinfo, image, job);
-        if(err == EXIT_FAILURE) {
-                fprintf(stderr, "Could not init job from image %i\n", err);
+        job->output_buffer = malloc(sizeof(cl_mem));
+        *job->output_buffer = clCreateBuffer(clinfo.context
+                                             , CL_MEM_WRITE_ONLY, job->output_size, NULL, &err);
+        if (err != CL_SUCCESS) {
+                fprintf(stderr, "Failed to create buffer\n");
                 return EXIT_FAILURE;
         }
 

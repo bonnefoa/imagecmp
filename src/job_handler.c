@@ -16,48 +16,81 @@ void histogram_free(histogram_t * histo)
         free(histo);
 }
 
-list_t * process_files(list_t * files, float threshold)
+list_t * push_jobs(list_t * files, clinfo_t clinfo)
 {
-        clinfo_t clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
-        list_t * similar_files = NULL;
-        list_t * histograms = NULL;
-        list_t * current = files;
-        list_t * lst_files = NULL;
+        int code;
         list_t * job_waits = NULL;
-        while(current != NULL) {
-                char * file = current->value;
-                current = current->next;
+        while(files != NULL) {
+                char * filename = files->value;
+                files = files->next;
                 job_t * job = job_init();
-                generate_histogram_from_file(file, clinfo, job);
+                image_t * image = image_init();
+                printf("Processing file %s\n", filename);
+                image->path = filename;
+                image = read_image(image);
+                printf("Processing image %s, width=%i, height=%i\n", filename
+                                , image->size[0], image->size[1]);
+                code = init_job_from_image(image, job);
+                if(code == EXIT_FAILURE) {
+                        fprintf(stderr, "Could not init job from image %i\n"
+                                        , code);
+                        return NULL;
+                }
+                generate_histogram(clinfo, image, job);
                 clFlush(clinfo.command_queue);
                 job_waits = list_append(job_waits, job);
         }
-        printf("All job submitted, processing results\n");
+        return job_waits;
+}
 
-        current = job_waits;
-        while(current != NULL) {
-                job_t * job = current->value;
+list_t * wait_job_results(list_t * job_waits)
+{
+        list_t * histograms = NULL;
+        while(job_waits != NULL) {
+                job_t * job = job_waits->value;
                 clWaitForEvents(1, job->fetch_event);
-                current = current->next;
+                job_waits = job_waits->next;
                 histogram_t * histo = histogram_init();
-                histo->file = malloc(strlen(job->name));
+                histo->file = malloc(strlen(job->name) + 1);
                 strcpy(histo->file, job->name);
                 int size = job->result_size[0] * job->result_size[1];
                 histo->results = histogram_average(job->results, size);
                 histograms = list_append(histograms, histo);
                 job_free(job);
+                job_waits->value = NULL;
         }
+        return histograms;
+}
 
-        clinfo_free(clinfo);
-        current = histograms;
-        while(current != NULL) {
-                lst_files = search_similar(current->value
-                                , current->next
-                                , threshold);
-                current = current->next;
+list_t * process_job_results(list_t * histograms, float threshold)
+{
+        list_t * similar_files = NULL;
+        list_t * lst_files = NULL;
+        while(histograms != NULL) {
+                lst_files = search_similar(histograms->value
+                                , histograms->next, threshold);
+                histograms = histograms->next;
                 similar_files = list_append(similar_files, lst_files);
         }
+        return similar_files;
+}
+
+list_t * process_files(list_t * files, float threshold)
+{
+        clinfo_t clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
+        list_t * similar_files = NULL;
+        list_t * histograms = NULL;
+        list_t * job_waits = NULL;
+
+        job_waits = push_jobs(files, clinfo);
+
+        histograms = wait_job_results(job_waits);
+        list_release(job_waits);
+
+        similar_files = process_job_results(histograms, threshold);
         list_release(histograms);
+
+        clinfo_free(clinfo);
         return similar_files;
 }
 

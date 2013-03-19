@@ -121,6 +121,7 @@ START_TEST (test_histogram_simple)
                 ck_assert_int_eq(pixels[i + 2], 0);
         }
 
+        init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
 
@@ -140,6 +141,7 @@ END_TEST
 START_TEST (test_histogram_blue_green)
 {
         fill_rgba_pixels(&blue_green_fill);
+        init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
         check_blue_green_results(job->results);
@@ -150,6 +152,7 @@ START_TEST (test_spilled_histogram)
 {
         fill_rgba_pixels(&spilled_fill);
 
+        init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
 
@@ -186,9 +189,12 @@ void create_test_file(char * path, unsigned char (*fill_funct)(int, int, int))
 START_TEST (test_read_jpeg_from_file)
 {
         char * path = "/tmp/test.jpg";
+        list_t * files = NULL;
+        files = list_append(files, path);
         create_test_file(path, blue_green_fill);
         write_jpeg_image(path, image);
-        generate_histogram_from_file(path, clinfo, job);
+
+        job_t * job = push_jobs(files, clinfo)->value;
         clFinish(clinfo.command_queue);
         check_blue_green_results(job->results);
 }
@@ -197,9 +203,12 @@ END_TEST
 START_TEST (test_read_png_from_file)
 {
         char * path = "/tmp/test.png";
+        list_t * files = NULL;
+        files = list_append(files, path);
         create_test_file(path, blue_green_fill);
         write_png_image(path, image);
-        generate_histogram_from_file(path, clinfo, job);
+
+        job_t * job = push_jobs(files, clinfo)->value;
         clFinish(clinfo.command_queue);
         check_blue_green_results(job->results);
 }
@@ -210,6 +219,7 @@ START_TEST (test_inegal_size)
         width = 2000;
         height = 3500;
         fill_rgba_pixels(&blue_green_fill);
+        init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
         clFinish(clinfo.command_queue);
         float * results = job->results;

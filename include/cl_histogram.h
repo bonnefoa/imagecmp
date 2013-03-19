@@ -29,8 +29,7 @@ typedef struct job {
 job_t * job_init();
 void job_free(job_t * job);
 
-int init_job_from_image(clinfo_t clinfo, image_t * image
-                     , job_t * job);
+int init_job_from_image(image_t * image, job_t * job);
 int generate_histogram_from_file(char * filename
                               , clinfo_t clinfo, job_t * job);
 int generate_histogram(clinfo_t clinfo
