@@ -100,6 +100,7 @@ image_t * read_png_image(image_t * image, FILE * infile)
         png_uint_32  i, rowbytes;
         png_uint_32 width;
         png_uint_32 height;
+        int num_channel = RGB_CHANNEL;
         png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING
                         , NULL, NULL, NULL);
         png_infop info_ptr = png_create_info_struct(png_ptr);
@@ -122,6 +123,9 @@ image_t * read_png_image(image_t * image, FILE * infile)
         if (color_type == PNG_COLOR_TYPE_GRAY ||
                         color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
                 png_set_gray_to_rgb(png_ptr);
+        if(color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
+                num_channel = RGBA_CHANNEL;
+        }
 
         image->image_fmt->image_channel_order = CL_RGBA;
         image->image_fmt->image_channel_data_type = CL_UNSIGNED_INT8;
@@ -130,14 +134,19 @@ image_t * read_png_image(image_t * image, FILE * infile)
         png_read_update_info(png_ptr, info_ptr);
         rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
-        unsigned char * lines = malloc(sizeof(unsigned char) * width * height * RGB_CHANNEL);
+        unsigned char * lines = malloc(sizeof(unsigned char)
+                                * width * height * num_channel);
         for (i = 0;  i < height;  ++i)
                 row_pointers[i] = lines + i*rowbytes;
         png_read_image(png_ptr, row_pointers);
         png_read_end(png_ptr, NULL);
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
-        *image->pixels = convert_to_rgba(lines, width, height);
+        unsigned char * results = lines;
+        if(color_type != PNG_COLOR_TYPE_RGB_ALPHA) {
+                results = convert_to_rgba(lines, width, height);
+        }
+        *image->pixels = results;
         free(lines);
         return image;
 }
