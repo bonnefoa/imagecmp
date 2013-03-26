@@ -5,7 +5,7 @@ histogram_t * histogram_init()
 {
         histogram_t * histo = malloc(sizeof(histogram_t));
         histo->file = NULL;
-        histo->results = malloc(sizeof(float*));
+        histo->results = NULL;
         return histo;
 }
 
@@ -88,7 +88,7 @@ list_t * process_files(list_t * files, float threshold)
         list_release(job_waits);
 
         similar_files = process_job_results(histograms, threshold);
-        list_release(histograms);
+        list_release_custom(histograms, &histogram_free);
 
         clinfo_free(clinfo);
         return similar_files;
