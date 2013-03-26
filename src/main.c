@@ -20,5 +20,6 @@ int main(int argc, char * argv[])
                 printf("\n");
                 current = current->next;
         }
+        list_release(files);
         return 0;
 }
