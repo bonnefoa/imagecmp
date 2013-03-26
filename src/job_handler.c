@@ -16,7 +16,7 @@ void histogram_free(histogram_t * histo)
         free(histo);
 }
 
-list_t * push_jobs(list_t * files, clinfo_t clinfo)
+list_t * push_jobs(list_t * files, clinfo_t * clinfo)
 {
         int code;
         list_t * job_waits = NULL;
@@ -37,7 +37,7 @@ list_t * push_jobs(list_t * files, clinfo_t clinfo)
                         return NULL;
                 }
                 generate_histogram(clinfo, image, job);
-                clFlush(clinfo.command_queue);
+                clFlush(clinfo->command_queue);
                 job_waits = list_append(job_waits, job);
         }
         return job_waits;
@@ -77,7 +77,7 @@ list_t * process_job_results(list_t * histograms, float threshold)
 
 list_t * process_files(list_t * files, float threshold)
 {
-        clinfo_t clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
+        clinfo_t * clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         list_t * similar_files = NULL;
         list_t * histograms = NULL;
         list_t * job_waits = NULL;

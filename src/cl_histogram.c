@@ -38,7 +38,6 @@ void job_free(job_t * job)
 
 int init_job_from_image(image_t * image, job_t * job)
 {
-        cl_int err;
         job->image = image;
         job->name = malloc(strlen(image->path) + 1);
         strcpy(job->name, image->path);
@@ -70,13 +69,13 @@ void event_callback(cl_event event, cl_int exec_status, void * args)
         printf("Callback finished\n");
 }
 
-int generate_histogram(clinfo_t clinfo
+int generate_histogram(clinfo_t * clinfo
                       , image_t * image, job_t * job)
 {
         cl_int err;
 
         job->output_buffer = malloc(sizeof(cl_mem));
-        *job->output_buffer = clCreateBuffer(clinfo.context
+        *job->output_buffer = clCreateBuffer(clinfo->context
                                              , CL_MEM_WRITE_ONLY, job->output_size, NULL, &err);
         if (err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to create buffer\n");
@@ -89,9 +88,9 @@ int generate_histogram(clinfo_t clinfo
                 return EXIT_FAILURE;
         }
 
-        err = clSetKernelArg(clinfo.kernel, 0, sizeof(cl_mem), job->image_buffer);
-        err |= clSetKernelArg(clinfo.kernel, 1, sizeof(cl_mem), job->output_buffer);
-        err |= clSetKernelArg(clinfo.kernel, 2
+        err = clSetKernelArg(clinfo->kernel, 0, sizeof(cl_mem), job->image_buffer);
+        err |= clSetKernelArg(clinfo->kernel, 1, sizeof(cl_mem), job->output_buffer);
+        err |= clSetKernelArg(clinfo->kernel, 2
                               , sizeof(cl_ushort16) * job->local_size[0] * job->local_size[1]
                               , NULL);
         if(err != CL_SUCCESS) {
@@ -102,7 +101,7 @@ int generate_histogram(clinfo_t clinfo
         printf("Enqueing job global size %zu/%zu, localSize %zu/%zu\n"
                , job->global_size[0], job->global_size[1]
                , job->local_size[0], job->local_size[1]);
-        err = clEnqueueNDRangeKernel(clinfo.command_queue, clinfo.kernel, 2
+        err = clEnqueueNDRangeKernel(clinfo->command_queue, clinfo->kernel, 2
                                      , NULL, job->global_size
                                      , job->local_size
                                      , 1, job->image_event
@@ -114,7 +113,7 @@ int generate_histogram(clinfo_t clinfo
 
         printf("Fetch %i / %i elements in results\n", job->group_number[0]
                         , job->group_number[1]);
-        err = clEnqueueReadBuffer(clinfo.command_queue, *job->output_buffer
+        err = clEnqueueReadBuffer(clinfo->command_queue, *job->output_buffer
                                   , CL_FALSE, 0, job->output_size
                                   , job->fetched_results, 1
                                   , job->enqueue_event

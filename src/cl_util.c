@@ -31,13 +31,13 @@ char * read_file(const char * filename)
         return buffer;
 }
 
-void printStringInfo(clinfo_t clinfo, int typeStruct)
+void printStringInfo(clinfo_t * clinfo, int typeStruct)
 {
         char* value;
         size_t valueSize;
-        clGetDeviceInfo(clinfo.device_id, typeStruct, 0, NULL, &valueSize);
+        clGetDeviceInfo(clinfo->device_id, typeStruct, 0, NULL, &valueSize);
         value = (char*) malloc(valueSize);
-        clGetDeviceInfo(clinfo.device_id, typeStruct, valueSize, value, NULL);
+        clGetDeviceInfo(clinfo->device_id, typeStruct, valueSize, value, NULL);
         printf("%s\n", value);
         free(value);
 }
@@ -53,41 +53,41 @@ void print_cl_profiling(cl_event event)
         printf("Time : %f ms\n", (end - start) * 1e-06);
 }
 
-void print_cl_info(clinfo_t clinfo)
+void print_cl_info(clinfo_t *clinfo)
 {
 
         printStringInfo(clinfo, CL_DEVICE_NAME);
 
         size_t size;
-        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE
                         , sizeof(size), &size, NULL);
         printf("Max work group size %zu\n", size);
 
         size_t itemSize[3];
-        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES
                         , 3 * sizeof(size), &itemSize, NULL);
         printf("Max work item size %zu %zu %zu\n", itemSize[0]
                , itemSize[1], itemSize[2]);
 
         cl_bool sup;
-        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_IMAGE_SUPPORT
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE_SUPPORT
                         , sizeof(sup), &sup, NULL);
         printf("Image supported : %i\n", sup);
 
         size_t image_width;
-        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH
                         , sizeof(image_width), &image_width, NULL);
 
         size_t image_height;
-        clGetDeviceInfo(clinfo.device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT
                         , sizeof(image_height), &image_height, NULL);
         printf("Image max resolution %zu / %zu\n", image_width, image_height);
 }
 
-size_t get_kernel_group(clinfo_t clinfo)
+size_t get_kernel_group(clinfo_t * clinfo)
 {
         size_t kernelSize;
-        cl_int err = clGetKernelWorkGroupInfo(clinfo.kernel, clinfo.device_id
+        cl_int err = clGetKernelWorkGroupInfo(clinfo->kernel, clinfo->device_id
                                               , CL_KERNEL_WORK_GROUP_SIZE, sizeof(kernelSize), &kernelSize, NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to retrieve kernel group info\n");
@@ -96,60 +96,60 @@ size_t get_kernel_group(clinfo_t clinfo)
         return kernelSize;
 }
 
-clinfo_t clinfo_init(const char * kernelSource, const char * kernel_name)
+clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
 {
         int devType = CL_DEVICE_TYPE_ALL;
 
         cl_int err;
-        clinfo_t clinfo;
+        clinfo_t * clinfo = malloc(sizeof(clinfo_t));
 
-        err = clGetPlatformIDs(1, &(clinfo.cl_plateform), NULL);
+        err = clGetPlatformIDs(1, &(clinfo->cl_plateform), NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to find plateform\n");
                 exit( EXIT_FAILURE );
         }
 
-        err = clGetDeviceIDs(clinfo.cl_plateform, devType, 4, &(clinfo.device_id), NULL);
+        err = clGetDeviceIDs(clinfo->cl_plateform, devType, 1, &(clinfo->device_id), NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to get devices\n");
                 exit( EXIT_FAILURE );
         }
 
-        clinfo.context = clCreateContext(0, 1, &(clinfo.device_id), NULL, NULL, &err);
-        if(!clinfo.context) {
+        clinfo->context = clCreateContext(0, 1, &(clinfo->device_id), NULL, NULL, &err);
+        if(!clinfo->context) {
                 fprintf(stderr, "Failed to create context\n");
                 exit( EXIT_FAILURE );
         }
 
-        clinfo.command_queue = clCreateCommandQueue(clinfo.context
-                                , clinfo.device_id, CL_QUEUE_PROFILING_ENABLE, &err);
-        if(!clinfo.command_queue) {
+        clinfo->command_queue = clCreateCommandQueue(clinfo->context
+                                , clinfo->device_id, CL_QUEUE_PROFILING_ENABLE, &err);
+        if(!clinfo->command_queue) {
                 fprintf(stderr, "Failed to create commands\n");
                 exit( EXIT_FAILURE );
         }
 
         const char * kernel_content = read_file(kernelSource);
-        clinfo.program = clCreateProgramWithSource(clinfo.context, 1
+        clinfo->program = clCreateProgramWithSource(clinfo->context, 1
                            , &kernel_content, NULL, &err);
         free((char*)kernel_content);
-        if(!clinfo.program) {
+        if(!clinfo->program) {
                 fprintf(stderr, "Failed to create program\n");
                 exit( EXIT_FAILURE );
         }
 
-        err = clBuildProgram(clinfo.program, 0, NULL, NULL, NULL, NULL);
+        err = clBuildProgram(clinfo->program, 0, NULL, NULL, NULL, NULL);
         if(err != CL_SUCCESS) {
                 size_t len;
                 char buffer[2048];
 
                 fprintf(stderr, "Failed to build program\n");
-                clGetProgramBuildInfo(clinfo.program, clinfo.device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+                clGetProgramBuildInfo(clinfo->program, clinfo->device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
                 fprintf(stderr, "%s\n", buffer);
                 exit( EXIT_FAILURE );
         }
 
-        clinfo.kernel = clCreateKernel(clinfo.program, kernel_name, &err);
-        if(!clinfo.kernel || err != CL_SUCCESS) {
+        clinfo->kernel = clCreateKernel(clinfo->program, kernel_name, &err);
+        if(!clinfo->kernel || err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to create kernel\n");
                 exit( EXIT_FAILURE );
         }
@@ -157,19 +157,20 @@ clinfo_t clinfo_init(const char * kernelSource, const char * kernel_name)
         return clinfo;
 }
 
-void clinfo_free(clinfo_t clinfo)
+void clinfo_free(clinfo_t *clinfo)
 {
-        clReleaseProgram(clinfo.program);
-        clReleaseKernel(clinfo.kernel);
-        clReleaseCommandQueue(clinfo.command_queue);
-        clReleaseContext(clinfo.context);
+        clReleaseProgram(clinfo->program);
+        clReleaseKernel(clinfo->kernel);
+        clReleaseCommandQueue(clinfo->command_queue);
+        clReleaseContext(clinfo->context);
+        free(clinfo);
 }
 
-cl_mem * push_image(clinfo_t clinfo, image_t * image, cl_event * event)
+cl_mem * push_image(clinfo_t *clinfo, image_t * image, cl_event * event)
 {
         cl_mem * image_buffer = malloc(sizeof(cl_mem));
         cl_int err;
-        *image_buffer = clCreateImage2D(clinfo.context, CL_MEM_READ_ONLY
+        *image_buffer = clCreateImage2D(clinfo->context, CL_MEM_READ_ONLY
                                       , image->image_fmt, image->size[0]
                                       , image->size[1], 0, 0, &err);
         if(err != CL_SUCCESS) {
@@ -180,7 +181,7 @@ cl_mem * push_image(clinfo_t clinfo, image_t * image, cl_event * event)
         size_t region[] = {image->size[0], image->size[1], 1};
         printf("Pushing image of size %i/%i\n", image->size[0]
                         , image->size[1]);
-        err = clEnqueueWriteImage(clinfo.command_queue, *image_buffer
+        err = clEnqueueWriteImage(clinfo->command_queue, *image_buffer
                                   , CL_FALSE, origin, region
                                   , 0, 0, *image->pixels, 0, NULL, event);
         if(err != CL_SUCCESS) {

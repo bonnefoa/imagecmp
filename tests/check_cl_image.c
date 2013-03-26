@@ -13,7 +13,7 @@
 
 int width = 32;
 int height = 32;
-clinfo_t clinfo;
+clinfo_t * clinfo;
 job_t * job;
 image_t * image;
 
@@ -123,7 +123,7 @@ START_TEST (test_histogram_simple)
 
         init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
-        clFinish(clinfo.command_queue);
+        clFinish(clinfo->command_queue);
 
         ck_assert_int_eq(job->result_size[0], 1);
         ck_assert_int_eq(job->result_size[1], 1);
@@ -143,7 +143,7 @@ START_TEST (test_histogram_blue_green)
         fill_rgba_pixels(&blue_green_fill);
         init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
-        clFinish(clinfo.command_queue);
+        clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
 END_TEST
@@ -154,7 +154,7 @@ START_TEST (test_spilled_histogram)
 
         init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
-        clFinish(clinfo.command_queue);
+        clFinish(clinfo->command_queue);
 
         float * results = job->results;
         assert_float_equals(results[0 * BUCKET_NUMBER], 0.5f);
@@ -195,7 +195,7 @@ START_TEST (test_read_jpeg_from_file)
         write_jpeg_image(path, image);
 
         job_t * job = push_jobs(files, clinfo)->value;
-        clFinish(clinfo.command_queue);
+        clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
 END_TEST
@@ -209,7 +209,7 @@ START_TEST (test_read_png_from_file)
         write_png_image(path, image);
 
         job_t * job = push_jobs(files, clinfo)->value;
-        clFinish(clinfo.command_queue);
+        clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
 END_TEST
@@ -221,7 +221,7 @@ START_TEST (test_inegal_size)
         fill_rgba_pixels(&blue_green_fill);
         init_job_from_image(image, job);
         generate_histogram(clinfo, image, job);
-        clFinish(clinfo.command_queue);
+        clFinish(clinfo->command_queue);
         float * results = job->results;
         for(int y = 0; y < job->result_size[1]; y++) {
                 for(int x = 0; x < job->result_size[0]; x++) {
