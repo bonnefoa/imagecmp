@@ -49,15 +49,15 @@ list_t * wait_job_results(list_t * job_waits)
         while(job_waits != NULL) {
                 job_t * job = job_waits->value;
                 clWaitForEvents(1, job->fetch_event);
-                job_waits = job_waits->next;
                 histogram_t * histo = histogram_init();
                 histo->file = malloc(strlen(job->name) + 1);
                 strcpy(histo->file, job->name);
                 int size = job->result_size[0] * job->result_size[1];
                 histo->results = histogram_average(job->results, size);
                 histograms = list_append(histograms, histo);
-                job_free(job);
                 job_waits->value = NULL;
+                job_free(job);
+                job_waits = job_waits->next;
         }
         return histograms;
 }
