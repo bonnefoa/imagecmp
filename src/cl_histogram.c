@@ -40,7 +40,7 @@ int init_job_from_image(image_t * image, job_t * job)
 {
         cl_int err;
         job->image = image;
-        job->name = malloc(strlen(image->path));
+        job->name = malloc(strlen(image->path) + 1);
         strcpy(job->name, image->path);
         for (int i = 0; i < 2; i++) {
                 job->global_size[i] = round_up_power_of_two(image->size[i]);
