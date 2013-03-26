@@ -29,6 +29,18 @@ void list_release(list_t * list)
         }
 }
 
+void list_release_custom(list_t * list, void (*free_funct)(void*))
+{
+        list_t * curr = list;
+        list_t * next = NULL;
+        while(curr) {
+                next = curr->next;
+                (*free_funct)(curr->value);
+                free(curr);
+                curr = next;
+        }
+}
+
 list_t * list_append(list_t * list, void * value)
 {
         if (value == NULL) {
