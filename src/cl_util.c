@@ -154,6 +154,15 @@ clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
                 exit( EXIT_FAILURE );
         }
 
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH
+                        , sizeof(clinfo->max_width), &clinfo->max_width, NULL);
+
+        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT
+                        , sizeof(clinfo->max_heigth), &clinfo->max_heigth, NULL);
+        printf("Image max resolution %zu / %zu\n"
+                        , clinfo->max_width, clinfo->max_heigth);
+
+
         return clinfo;
 }
 
