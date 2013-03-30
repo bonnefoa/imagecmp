@@ -37,10 +37,12 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo, list_t **histograms)
                 char * filename = files->value;
                 files = files->next;
 
-                printf("Processing file %s\n", filename);
                 image_t * image = image_init();
                 image->path = filename;
                 image = read_image(image);
+                if (image == NULL) {
+                        continue;
+                }
                 if (image->size[0] > clinfo->max_width
                                 || image->size[1] > clinfo->max_heigth) {
                         printf("Ignoring %s, width=%i, height=%i\n", filename
@@ -61,7 +63,7 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo, list_t **histograms)
                 generate_histogram(clinfo, image, job);
                 clFlush(clinfo->command_queue);
                 count++;
-                if ( count > 20 ) {
+                if ( count > 50 ) {
                         *histograms = list_append(*histograms, wait_job(job));
                         count--;
                 } else {

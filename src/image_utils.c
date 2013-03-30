@@ -54,9 +54,12 @@ image_t * read_image(image_t * image)
         fread(sig, 1, 8, infile);
         if (png_sig_cmp(sig, 0, 8) == 0) {
                 image = read_png_image(image, infile);
-        } else {
+        } else if (sig[0] == 0xFF && sig[1] == 0xd8) {
                 fseek(infile, 0, 0);
                 image = read_jpeg_image(image, infile);
+        } else {
+                printf("Not a jpeg file\n");
+                return NULL;
         }
         fclose(infile);
         return image;
