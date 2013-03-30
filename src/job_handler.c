@@ -16,18 +16,40 @@ void histogram_free(histogram_t * histo)
         free(histo);
 }
 
-list_t * push_jobs(list_t * files, clinfo_t * clinfo)
+histogram_t * wait_job(job_t *job)
+{
+        clWaitForEvents(1, job->fetch_event);
+        histogram_t * histo = histogram_init();
+        histo->file = malloc(strlen(job->name) + 1);
+        strcpy(histo->file, job->name);
+        int size = job->result_size[0] * job->result_size[1];
+        histo->results = histogram_average(job->results, size);
+        job_free(job);
+        return histo;
+}
+
+list_t * push_jobs(list_t * files, clinfo_t * clinfo, list_t **histograms)
 {
         int code;
         list_t * job_waits = NULL;
+        int count = 0;
         while(files != NULL) {
                 char * filename = files->value;
                 files = files->next;
-                job_t * job = job_init();
-                image_t * image = image_init();
+
                 printf("Processing file %s\n", filename);
+                image_t * image = image_init();
                 image->path = filename;
                 image = read_image(image);
+                if (image->size[0] > clinfo->max_width
+                                || image->size[1] > clinfo->max_heigth) {
+                        printf("Ignoring %s, width=%i, height=%i\n", filename
+                                        , image->size[0], image->size[1]);
+                        image_free(image);
+                        continue;
+                }
+
+                job_t * job = job_init();
                 printf("Processing image %s, width=%i, height=%i\n", filename
                                 , image->size[0], image->size[1]);
                 code = init_job_from_image(image, job);
@@ -38,25 +60,25 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo)
                 }
                 generate_histogram(clinfo, image, job);
                 clFlush(clinfo->command_queue);
-                job_waits = list_append(job_waits, job);
+                count++;
+                if ( count > 20 ) {
+                        *histograms = list_append(*histograms, wait_job(job));
+                        count--;
+                } else {
+                        job_waits = list_append(job_waits, job);
+                }
         }
         return job_waits;
 }
 
-list_t * wait_job_results(list_t * job_waits)
+list_t* wait_for_jobs(list_t * job_waits)
 {
         list_t * histograms = NULL;
         while(job_waits != NULL) {
                 job_t * job = job_waits->value;
-                clWaitForEvents(1, job->fetch_event);
-                histogram_t * histo = histogram_init();
-                histo->file = malloc(strlen(job->name) + 1);
-                strcpy(histo->file, job->name);
-                int size = job->result_size[0] * job->result_size[1];
-                histo->results = histogram_average(job->results, size);
+                histogram_t *histo = wait_job(job);
                 histograms = list_append(histograms, histo);
                 job_waits->value = NULL;
-                job_free(job);
                 job_waits = job_waits->next;
         }
         return histograms;
@@ -79,16 +101,17 @@ list_t * process_files(list_t * files, float threshold)
 {
         clinfo_t * clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         list_t * similar_files = NULL;
-        list_t * histograms = NULL;
+        list_t ** histograms = malloc(sizeof(list_t *));
+        *histograms = NULL;
         list_t * job_waits = NULL;
 
-        job_waits = push_jobs(files, clinfo);
+        job_waits = push_jobs(files, clinfo, histograms);
 
-        histograms = wait_job_results(job_waits);
+        *histograms = list_append(*histograms, wait_for_jobs(job_waits));
         list_release(job_waits);
 
-        similar_files = process_job_results(histograms, threshold);
-        list_release_custom(histograms, &histogram_free);
+        similar_files = process_job_results(*histograms, threshold);
+        list_release_custom(*histograms, &histogram_free);
 
         clinfo_free(clinfo);
         return similar_files;
