@@ -20,8 +20,7 @@ void image_free(image_t * image)
 {
         if(image == NULL)
                 return;
-        if(image->pixels)
-                free(*image->pixels);
+        free(*image->pixels);
         free(image->pixels);
         free(image->image_fmt);
         free(image);
@@ -145,9 +144,9 @@ image_t * read_png_image(image_t * image, FILE * infile)
         unsigned char * results = lines;
         if(color_type != PNG_COLOR_TYPE_RGB_ALPHA) {
                 results = convert_to_rgba(lines, width, height);
+                free(lines);
         }
         *image->pixels = results;
-        free(lines);
         return image;
 }
 
