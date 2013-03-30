@@ -63,10 +63,8 @@ void event_callback(cl_event event, cl_int exec_status, void * args)
         printf("Callback for file %s\n", job->name);
         job->results = reduce_histogram(job);
 
-        printf("Releasing buffer\n");
         clReleaseMemObject(*job->image_buffer);
         clReleaseMemObject(*job->output_buffer);
-        printf("Callback finished\n");
 }
 
 int generate_histogram(clinfo_t * clinfo
@@ -98,9 +96,6 @@ int generate_histogram(clinfo_t * clinfo
                 return EXIT_FAILURE;
         }
 
-        printf("Enqueing job global size %zu/%zu, localSize %zu/%zu\n"
-               , job->global_size[0], job->global_size[1]
-               , job->local_size[0], job->local_size[1]);
         err = clEnqueueNDRangeKernel(clinfo->command_queue, clinfo->kernel, 2
                                      , NULL, job->global_size
                                      , job->local_size
@@ -111,8 +106,6 @@ int generate_histogram(clinfo_t * clinfo
                 return EXIT_FAILURE;
         }
 
-        printf("Fetch %i / %i elements in results\n", job->group_number[0]
-                        , job->group_number[1]);
         err = clEnqueueReadBuffer(clinfo->command_queue, *job->output_buffer
                                   , CL_FALSE, 0, job->output_size
                                   , job->fetched_results, 1
