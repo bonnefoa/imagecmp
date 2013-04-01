@@ -1,5 +1,4 @@
 #include <cl_util.h>
-#include <math.h>
 #include <image_utils.h>
 #include <cl_histogram.h>
 #include <string.h>

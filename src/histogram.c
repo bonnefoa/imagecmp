@@ -1,4 +1,5 @@
 #include <histogram.h>
+#include <math.h>
 
 float * histogram_average(float * histo, int size)
 {
