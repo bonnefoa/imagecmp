@@ -11,7 +11,7 @@ TEST_CCFLAGS = -I$(IDIR) -Wall -Wextra -pedantic -std=c99
 LIBS = -lOpenCL -ljpeg -L/home/sora/downloads/libpng-1.5.13/temp/lib -lgaga -lz
 TEST_LIBS = $(LIBS) -lcheck
 
-_OBJ = cl_util.o list.o image_utils.o cl_histogram.o job_handler.o map.o
+_OBJ = cl_util.o list.o image_utils.o cl_histogram.o job_handler.o map.o histogram.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 MAIN = $(ODIR)/main.o $(OBJ) 

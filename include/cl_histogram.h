@@ -1,7 +1,6 @@
 #ifndef __CL_HISTOGRAM_H__
 #define __CL_HISTOGRAM_H__
 
-#define BUCKET_NUMBER 5
 #define VECTOR_SIZE 16
 
 #define KERNEL_PATH "src/kernel_image.cl"
@@ -34,9 +33,6 @@ int generate_histogram_from_file(char * filename
                               , clinfo_t * clinfo, job_t * job);
 int generate_histogram(clinfo_t * clinfo
                       , image_t * image, job_t * job);
-
-float histogram_distance(float * histo_1, float * histo_2);
-float * histogram_average(float * histo, int size);
 float * reduce_histogram(job_t * job);
 
 #endif
