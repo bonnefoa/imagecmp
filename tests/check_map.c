@@ -16,9 +16,9 @@ START_TEST (test_simple_map)
         map = map_add(map, "test", "test");
         map = map_add(map, "test2", "test2");
         char * res = (char *) map_get(map, "test");
-        fail_unless(res == "test");
+        ck_assert_str_eq(res, "test");
         res = (char *) map_get(map, "test2");
-        fail_unless(res == "test2");
+        ck_assert_str_eq(res, "test2");
         map_release(map);
 }
 END_TEST
@@ -29,9 +29,9 @@ START_TEST (test_collision)
         map = map_add(map, "test", "test");
         map = map_add(map, "test2", "test2");
         char * res = (char *) map_get(map, "test");
-        fail_unless(res == "test");
+        ck_assert_str_eq(res, "test");
         res = (char *) map_get(map, "test2");
-        fail_unless(res == "test2");
+        ck_assert_str_eq(res, "test2");
         map_release(map);
 }
 END_TEST
@@ -43,7 +43,7 @@ START_TEST (test_deletion)
         map = map_add(map, "test2", "test2");
         map_delete(map, "test");
         char * res = (char *) map_get(map, "test");
-        fail_unless(res == "test");
+        ck_assert_str_eq(res, "test");
         map_release(map);
 }
 END_TEST
