@@ -1,5 +1,6 @@
 #include <job_handler.h>
 #include <string.h>
+#include <histogram.h>
 
 histogram_t * histogram_init()
 {
@@ -64,7 +65,8 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo, list_t **histograms)
                 clFlush(clinfo->command_queue);
                 count++;
                 if ( count > 50 ) {
-                        *histograms = list_append(*histograms, wait_job(job));
+                        histogram_t *histo = wait_job(job);
+                        *histograms = list_append(*histograms, histo);
                         count--;
                 } else {
                         job_waits = list_append(job_waits, job);
@@ -78,8 +80,8 @@ list_t* wait_for_jobs(list_t * job_waits)
         list_t * histograms = NULL;
         while(job_waits != NULL) {
                 job_t * job = job_waits->value;
-                histogram_t *histo = wait_job(job);
-                histograms = list_append(histograms, histo);
+                histogram_t *histogram = wait_job(job);
+                histograms = list_append(histograms, histogram);
                 job_waits->value = NULL;
                 job_waits = job_waits->next;
         }
@@ -109,7 +111,8 @@ list_t * process_files(list_t * files, float threshold)
 
         job_waits = push_jobs(files, clinfo, histograms);
 
-        *histograms = list_append(*histograms, wait_for_jobs(job_waits));
+        list_t *last_histograms = wait_for_jobs(job_waits);
+        *histograms = list_append(*histograms, last_histograms);
         list_release(job_waits);
 
         similar_files = process_job_results(*histograms, threshold);
