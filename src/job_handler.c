@@ -1,21 +1,5 @@
 #include <job_handler.h>
 #include <string.h>
-#include <histogram.h>
-
-histogram_t * histogram_init()
-{
-        histogram_t * histo = malloc(sizeof(histogram_t));
-        histo->file = NULL;
-        histo->results = NULL;
-        return histo;
-}
-
-void histogram_free(histogram_t * histo)
-{
-        free(histo->file);
-        free(histo->results);
-        free(histo);
-}
 
 histogram_t * wait_job(job_t *job)
 {
@@ -29,7 +13,8 @@ histogram_t * wait_job(job_t *job)
         return histo;
 }
 
-list_t * push_jobs(list_t * files, clinfo_t * clinfo, list_t **histograms)
+list_t * push_jobs(list_t * files, clinfo_t * clinfo
+                , list_t **histograms, FILE* cache_file)
 {
         int code;
         list_t * job_waits = NULL;
@@ -106,10 +91,12 @@ list_t * process_files(list_t * files, float threshold)
         clinfo_t * clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         list_t * similar_files = NULL;
         list_t ** histograms = malloc(sizeof(list_t *));
+        FILE *cache_file = fopen(".histograms", "wb");
+
         *histograms = NULL;
         list_t * job_waits = NULL;
 
-        job_waits = push_jobs(files, clinfo, histograms);
+        job_waits = push_jobs(files, clinfo, histograms, cache_file);
 
         list_t *last_histograms = wait_for_jobs(job_waits);
         *histograms = list_append(*histograms, last_histograms);
