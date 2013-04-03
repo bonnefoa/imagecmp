@@ -26,6 +26,8 @@ void setup (void)
         image->image_fmt->image_channel_data_type = CL_UNSIGNED_INT8;
         image->path = "test_image";
         clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
+        clinfo->max_width = 2048;
+        clinfo->max_heigth = 2048;
 }
 
 void teardown (void)
@@ -194,7 +196,9 @@ START_TEST (test_read_jpeg_from_file)
         create_test_file(path, blue_green_fill);
         write_jpeg_image(path, image);
 
-        job_t * job = push_jobs(files, clinfo)->value;
+        FILE *tmp_file = fopen("/tmp/imagecl_cache", "wb");
+        list_t **histo = malloc(sizeof(list_t*));
+        job_t * job = push_jobs(files, clinfo, histo, tmp_file)->value;
         clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
@@ -208,7 +212,9 @@ START_TEST (test_read_png_from_file)
         create_test_file(path, blue_green_fill);
         write_png_image(path, image);
 
-        job_t * job = push_jobs(files, clinfo)->value;
+        FILE *tmp_file = fopen("/tmp/imagecl_cache", "wb");
+        list_t **histo = malloc(sizeof(list_t*));
+        job_t * job = push_jobs(files, clinfo, histo, tmp_file)->value;
         clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
@@ -235,35 +241,7 @@ START_TEST (test_inegal_size)
 }
 END_TEST
 
-START_TEST (test_histogram_distance)
-{
-        float * histo_1 = malloc(sizeof(float) * VECTOR_SIZE);
-        float * histo_2 = malloc(sizeof(float) * VECTOR_SIZE);
-        mark_point();
-        for(unsigned int i = 0; i < 15; i++) {
-                histo_1[i] = 0.f;
-                histo_2[i] = 0.1f;
-        }
-        mark_point();
-        float res = histogram_distance(histo_1, histo_2);
-        assert_float_equals(res, 1.5f);
-}
-END_TEST
-
-START_TEST (test_histogram_average)
-{
-        float * histo = malloc(sizeof(float) * 32);
-        for(unsigned int i = 0; i < 32; i++) {
-                histo[i] = 0.1f;
-        }
-        float * res = histogram_average(histo, 2);
-        for(int i = 0; i < BUCKET_NUMBER; i++) {
-                assert_float_equals(res[i], 0.1f);
-        }
-}
-END_TEST
-
-Suite * soragl_suite (void)
+Suite * cl_image_suite (void)
 {
         Suite *s = suite_create ("cl_image");
         TCase *tc_core = tcase_create ("cl_image");
@@ -273,8 +251,6 @@ Suite * soragl_suite (void)
         tcase_add_test (tc_core, test_histogram_blue_green);
         tcase_add_test (tc_core, test_spilled_histogram);
         tcase_add_test (tc_core, test_inegal_size);
-        tcase_add_test (tc_core, test_histogram_distance);
-        tcase_add_test (tc_core, test_histogram_average);
         tcase_add_test (tc_core, test_read_jpeg_from_file);
         tcase_add_test (tc_core, test_read_png_from_file);
         suite_add_tcase (s, tc_core);
@@ -284,7 +260,7 @@ Suite * soragl_suite (void)
 int main (void)
 {
         int number_failed;
-        Suite *s = soragl_suite ();
+        Suite *s = cl_image_suite ();
         SRunner *sr = srunner_create (s);
         srunner_run_all (sr, CK_NORMAL);
         number_failed = srunner_ntests_failed (sr);
