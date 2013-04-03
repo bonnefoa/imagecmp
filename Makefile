@@ -39,6 +39,9 @@ check_job_handler: $(ODIR)/check_job_handler.o $(OBJ)
 check_map: $(ODIR)/check_map.o $(OBJ) 
 	$(CC) -o $@ $^ $(TEST_CCFLAGS) $(TEST_LIBS) 
 
+check_histogram: $(ODIR)/check_histogram.o $(OBJ) 
+	$(CC) -o $@ $^ $(TEST_CCFLAGS) $(TEST_LIBS) 
+
 .PHONY: clean
 
 clean:
