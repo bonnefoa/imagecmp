@@ -2,8 +2,10 @@
 
 char *strdup (const char *s)
 {
-        char *res = malloc (strlen(s) + 1);
-        if (res == NULL) return NULL;
-        strcpy(res,s);
+        char *res;
+        int numChars = strlen(s) + 1;
+        if((res = malloc(sizeof(numChars))) == NULL)
+                return NULL;
+        strncpy(res,s, numChars);
         return res;
 }
