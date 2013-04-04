@@ -4,7 +4,7 @@
 #include <job_handler.h>
 #include <cl_util.h>
 #include <cl_histogram.h>
-#include <image_utils.h>
+#include <image_util.h>
 #include <math.h>
 #define EPSILON 0.01f
 #define assert_float_equals(res, expected) \

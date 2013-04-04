@@ -4,14 +4,19 @@ ODIR    = obj
 LDIR    = lib
 TESTDIR = tests
 
-CC      = gcc
-CCFLAGS = -I$(IDIR) -Wall -Wextra -pedantic -std=c99
-TEST_CCFLAGS = -I$(IDIR) -Wall -Wextra -pedantic -std=c99 
+CC      = clang
+CCFLAGS = -I$(IDIR) -Wall -Wextra -std=c99 
+CCFLAGS += `pkg-config --cflags zlib libpng eet`
 
-LIBS = -lOpenCL -ljpeg -L/home/sora/downloads/libpng-1.5.13/temp/lib -lgaga -lz
+TEST_CCFLAGS = -I$(IDIR) -Wall -Wextra -std=c99 
+TEST_CCFLAGS += `pkg-config --cflags zlib libpng eet`
+
+LIBS = -lOpenCL -ljpeg 
+LIBS += `pkg-config --libs zlib libpng eet`
+
 TEST_LIBS = $(LIBS) -lcheck
 
-_OBJ = cl_util.o list.o image_utils.o cl_histogram.o job_handler.o map.o histogram.o
+_OBJ = cl_util.o list.o image_util.o cl_histogram.o job_handler.o map.o histogram.o util.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 MAIN = $(ODIR)/main.o $(OBJ) 

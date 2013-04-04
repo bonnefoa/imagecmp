@@ -4,6 +4,11 @@
 #include <map.h>
 #include <string.h>
 
+#include <sys/time.h>
+#include <util.h>
+#include <Eina.h>
+#include <Eet.h>
+
 histogram_t * histogram_init()
 {
         histogram_t * histo = malloc(sizeof(histogram_t));

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <CL/cl.h>
-#include <image_utils.h>
+#include <image_util.h>
 
 typedef struct clinfo {
         cl_platform_id cl_plateform;
