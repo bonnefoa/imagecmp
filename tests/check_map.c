@@ -43,7 +43,7 @@ START_TEST (test_deletion)
         map = map_add(map, "test2", "test2");
         map_delete(map, "test");
         char * res = (char *) map_get(map, "test");
-        ck_assert_str_eq(res, "test");
+        fail_unless(res == NULL);
         map_release(map);
 }
 END_TEST

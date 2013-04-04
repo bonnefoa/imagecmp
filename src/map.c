@@ -116,5 +116,12 @@ map_t * map_add(map_t * map, const void* key, void * value)
 map_t * map_delete(map_t * map, void * key)
 {
         unsigned int index = map_index(map, key);
+        map_entry_t **current = &map->hash_table[index];
+        while((*current) != NULL) {
+                if(strcmp((*current)->key, key)==0) {
+                        *current = (*current)->next;
+                }
+                current = &(*current)->next;
+        }
         return map;
 }
