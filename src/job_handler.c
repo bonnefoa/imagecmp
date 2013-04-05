@@ -103,7 +103,7 @@ list_t * process_files(list_t * files, float threshold)
         list_release(job_waits);
 
         similar_files = process_job_results(*histograms, threshold);
-        list_release_custom(*histograms, &histogram_free);
+        list_release_custom(*histograms, (void (*)(void *))&histogram_free);
 
         clinfo_free(clinfo);
         return similar_files;
