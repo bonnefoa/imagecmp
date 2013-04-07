@@ -59,13 +59,14 @@ START_TEST (test_histogram_save)
         eina_hash_add(map_histo, "test", histo);
         write_histogram_to_file(test_file, map_histo);
         eina_hash_free(map_histo);
+        mark_point();
 
-        Eina_Hash *map_histo_2 = read_histogram_file(test_file);
+        map_histo = read_histogram_file(test_file);
         histogram_t *entry = eina_hash_find(map_histo, "test");
         for(unsigned int i = 0; i < BUCKET_NUMBER; i++) {
                 assert_float_equals(entry->results[i], 0.4f);
         }
-        write_histogram_to_file(test_file, map_histo_2);
+        write_histogram_to_file(test_file, map_histo);
 
         mark_point();
         eina_hash_free(map_histo);
