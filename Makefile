@@ -16,7 +16,7 @@ LIBS += `pkg-config --libs zlib libpng eet`
 
 TEST_LIBS = $(LIBS) -lcheck
 
-_OBJ = cl_util.o list.o image_util.o cl_histogram.o job_handler.o map.o histogram.o util.o
+_OBJ = cl_util.o list.o image_util.o cl_histogram.o job_handler.o histogram.o util.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 MAIN = $(ODIR)/main.o $(OBJ) 
