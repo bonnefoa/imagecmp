@@ -47,13 +47,11 @@ histogram_t * histogram_init()
 void histogram_free(histogram_t * histo)
 {
         free(histo->file);
-        free(histo->results);
         free(histo);
 }
 
-float * histogram_average(float * histo, int size)
+void histogram_average(float * histo, float *average, int size)
 {
-        float * average = malloc(sizeof(float) * BUCKET_NUMBER);
         for(int i = 0; i < BUCKET_NUMBER; i++) {
                 average[i] = 0;
         }
@@ -66,7 +64,6 @@ float * histogram_average(float * histo, int size)
         for(int i = 0; i < BUCKET_NUMBER; i++) {
                 average[i] /= size;
         }
-        return average;
 }
 
 float histogram_distance(float * histo_1, float * histo_2)

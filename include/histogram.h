@@ -12,7 +12,7 @@
 
 typedef struct histogram {
         char * file;
-        float results[16];
+        float results[BUCKET_NUMBER];
 } histogram_t;
 
 typedef struct histogram_cache  {
@@ -23,7 +23,7 @@ histogram_t * histogram_init();
 void histogram_free(histogram_t * histogram);
 
 float histogram_distance(float * histo_1, float * histo_2);
-float * histogram_average(float * histo, int size);
+void histogram_average(float * histo, float *average, int size);
 
 histogram_cache_t * read_histogram_file(char * input_file);
 void write_histogram_to_file(char * output_file, histogram_cache_t *histos);

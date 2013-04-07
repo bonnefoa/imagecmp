@@ -32,13 +32,14 @@ END_TEST
 
 START_TEST (test_histogram_average)
 {
+        float results[5];
         float * histo = malloc(sizeof(float) * 32);
         for(unsigned int i = 0; i < 32; i++) {
                 histo[i] = 0.1f;
         }
-        float * res = histogram_average(histo, 2);
+        histogram_average(histo, results, 2);
         for(int i = 0; i < BUCKET_NUMBER; i++) {
-                assert_float_equals(res[i], 0.1f);
+                assert_float_equals(results[i], 0.1f);
         }
 }
 END_TEST
@@ -49,7 +50,7 @@ START_TEST (test_histogram_save)
         histogram_cache_descriptor_init();
         histogram_t *histo = malloc(sizeof(histogram_t));
         histo->file = "test";
-        for(unsigned int i = 0; i < 15; i++) {
+        for(unsigned int i = 0; i < BUCKET_NUMBER; i++) {
                 histo->results[i] = 0.4f;
         }
 
@@ -58,12 +59,13 @@ START_TEST (test_histogram_save)
         eina_hash_add(map_histo, "test", histo);
         histogram_cache_t *histo_cache = malloc(sizeof(histogram_cache_t));
         histo_cache->histograms = map_histo;
+        mark_point();
         write_histogram_to_file(test_file, histo_cache);
         free(histo_cache);
 
         histogram_cache_t *res = read_histogram_file(test_file);
         histogram_t *entry = eina_hash_find(res->histograms, "test");
-        for(unsigned int i = 0; i < 15; i++) {
+        for(unsigned int i = 0; i < BUCKET_NUMBER; i++) {
                 assert_float_equals(entry->results[i], 0.4f);
         }
 
