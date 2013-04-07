@@ -47,6 +47,10 @@ check_map: $(ODIR)/check_map.o $(OBJ)
 check_histogram: $(ODIR)/check_histogram.o $(OBJ) 
 	$(CC) -o $@ $^ $(TEST_CCFLAGS) $(TEST_LIBS) 
 
+print_cl_infos: $(ODIR)/list_devices.o $(OBJ) 
+	$(CC) -o $@ $^ $(CCFLAGS) $(LIBS)
+	./print_cl_infos
+
 .PHONY: clean
 
 clean:

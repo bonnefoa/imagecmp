@@ -28,5 +28,7 @@ size_t get_kernel_group(clinfo_t * clinfo);
 
 int round_up_power_of_two(int num);
 cl_mem * push_image(clinfo_t * clinfo, image_t * image, cl_event * event);
+void print_string_info(cl_device_id device_id, char * struct_name, int struct_type);
+void print_int_info(cl_device_id device_id, char * struct_name, int struct_type);
 
 #endif

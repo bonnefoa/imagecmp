@@ -31,15 +31,25 @@ char * read_file(const char * filename)
         return buffer;
 }
 
-void printStringInfo(clinfo_t * clinfo, int typeStruct)
+void print_string_info(cl_device_id device_id
+                , char * struct_name, int struct_type)
 {
         char* value;
         size_t valueSize;
-        clGetDeviceInfo(clinfo->device_id, typeStruct, 0, NULL, &valueSize);
+        clGetDeviceInfo(device_id, struct_type, 0, NULL, &valueSize);
         value = (char*) malloc(valueSize);
-        clGetDeviceInfo(clinfo->device_id, typeStruct, valueSize, value, NULL);
-        printf("%s\n", value);
+        clGetDeviceInfo(device_id, struct_type, valueSize, value, NULL);
+        printf("%s: %s\n", struct_name, value);
         free(value);
+}
+
+void print_int_info(cl_device_id device_id
+                , char * struct_name, int struct_type)
+{
+        size_t res;
+        clGetDeviceInfo(device_id, struct_type
+                        , sizeof(res), &res, NULL);
+        printf("%s: %zu\n", struct_name, res);
 }
 
 void print_cl_profiling(cl_event event)
@@ -51,37 +61,6 @@ void print_cl_profiling(cl_event event)
         clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END
                                 , sizeof(cl_ulong), &end, NULL );
         printf("Time : %f ms\n", (end - start) * 1e-06);
-}
-
-void print_cl_info(clinfo_t *clinfo)
-{
-
-        printStringInfo(clinfo, CL_DEVICE_NAME);
-
-        size_t size;
-        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE
-                        , sizeof(size), &size, NULL);
-        printf("Max work group size %zu\n", size);
-
-        size_t itemSize[3];
-        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES
-                        , 3 * sizeof(size), &itemSize, NULL);
-        printf("Max work item size %zu %zu %zu\n", itemSize[0]
-               , itemSize[1], itemSize[2]);
-
-        cl_bool sup;
-        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE_SUPPORT
-                        , sizeof(sup), &sup, NULL);
-        printf("Image supported : %i\n", sup);
-
-        size_t image_width;
-        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH
-                        , sizeof(image_width), &image_width, NULL);
-
-        size_t image_height;
-        clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT
-                        , sizeof(image_height), &image_height, NULL);
-        printf("Image max resolution %zu / %zu\n", image_width, image_height);
 }
 
 size_t get_kernel_group(clinfo_t * clinfo)
