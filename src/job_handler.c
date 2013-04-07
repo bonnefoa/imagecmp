@@ -95,10 +95,10 @@ list_t * process_job_results(Eina_Hash *map_histo, float threshold)
         }
         eina_iterator_free(iter);
 
-        printf("Looking for similarities in %i elements\n"
-                        , eina_hash_population(map_histo));
+        printf("Looking for similarities in %i elements with threshold %.2f\n"
+                        , eina_hash_population(map_histo), threshold);
         current = list_histo;
-        while(current != NULL) {
+        while(current) {
                 lst_files = search_similar(current->value
                                 , current->next, threshold);
                 current = current->next;
