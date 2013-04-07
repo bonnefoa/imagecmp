@@ -13,8 +13,8 @@ typedef struct clinfo {
         cl_command_queue command_queue;
         cl_program program;
         cl_kernel kernel;
-        int max_heigth;
-        int max_width;
+        int *max_heigth;
+        int *max_width;
 } clinfo_t;
 
 char * read_file(const char * filename);

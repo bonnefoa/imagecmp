@@ -81,6 +81,8 @@ clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
 
         cl_int err;
         clinfo_t * clinfo = malloc(sizeof(clinfo_t));
+        clinfo->max_heigth = malloc(sizeof(int));
+        clinfo->max_width = malloc(sizeof(int));
 
         err = clGetPlatformIDs(1, &(clinfo->cl_plateform), NULL);
         if(err != CL_SUCCESS) {
@@ -134,12 +136,12 @@ clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
         }
 
         clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH
-                        , sizeof(clinfo->max_width), &clinfo->max_width, NULL);
+                        , sizeof(clinfo->max_width), clinfo->max_width, NULL);
 
         clGetDeviceInfo(clinfo->device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT
-                        , sizeof(clinfo->max_heigth), &clinfo->max_heigth, NULL);
+                        , sizeof(clinfo->max_heigth), clinfo->max_heigth, NULL);
         printf("Image max resolution %i / %i\n"
-                        , clinfo->max_width, clinfo->max_heigth);
+                        , *clinfo->max_width, *clinfo->max_heigth);
 
 
         return clinfo;
@@ -151,6 +153,8 @@ void clinfo_free(clinfo_t *clinfo)
         clReleaseKernel(clinfo->kernel);
         clReleaseCommandQueue(clinfo->command_queue);
         clReleaseContext(clinfo->context);
+        free(clinfo->max_width);
+        free(clinfo->max_heigth);
         free(clinfo);
 }
 

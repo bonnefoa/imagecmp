@@ -30,8 +30,8 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
                 if (image == NULL) {
                         continue;
                 }
-                if (image->size[0] > clinfo->max_width
-                                || image->size[1] > clinfo->max_heigth) {
+                if (image->size[0] > *clinfo->max_width
+                                || image->size[1] > *clinfo->max_heigth) {
                         printf("Ignoring %s, width=%i, height=%i\n", filename
                                         , image->size[0], image->size[1]);
                         image_free(image);
