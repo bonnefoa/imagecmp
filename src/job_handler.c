@@ -118,26 +118,3 @@ list_t * process_files(list_t * files, float threshold)
         clinfo_free(clinfo);
         return similar_files;
 }
-
-list_t * search_similar(histogram_t * reference, list_t * histograms
-                , float threshold)
-{
-        list_t * lst_files = NULL;
-        while(histograms != NULL) {
-                histogram_t * histogram = histograms->value;
-                histograms = histograms->next;
-                float dist = histogram_distance(reference->results
-                                , histogram->results);
-                if(dist < threshold) {
-                        printf("Files %s and %s are similar (distance %.2f)\n"
-                                        , reference->file
-                                        , histogram->file
-                                        , dist);
-                        lst_files = list_append(lst_files, histogram->file);
-                }
-        }
-        if(lst_files != NULL) {
-                lst_files = list_append(lst_files, reference->file);
-        }
-        return lst_files;
-}

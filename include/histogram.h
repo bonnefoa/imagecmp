@@ -29,5 +29,7 @@ histogram_cache_t * read_histogram_file(char * input_file);
 void write_histogram_to_file(char * output_file, histogram_cache_t *histos);
 void histogram_cache_descriptor_init(void);
 void histogram_cache_descriptor_shutdown(void);
+list_t * search_similar(histogram_t * reference, list_t * histograms
+                , float threshold);
 
 #endif

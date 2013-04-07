@@ -102,3 +102,26 @@ void write_histogram_to_file(char * output_file, histogram_cache_t *histos)
                         , CACHE_FILE_ENTRY, histos, EINA_TRUE);
         eet_close(ef);
 }
+
+list_t * search_similar(histogram_t * reference, list_t * histograms
+                , float threshold)
+{
+        list_t * lst_files = NULL;
+        while(histograms != NULL) {
+                histogram_t * histogram = histograms->value;
+                histograms = histograms->next;
+                float dist = histogram_distance(reference->results
+                                , histogram->results);
+                if(dist < threshold) {
+                        printf("Files %s and %s are similar (distance %.2f)\n"
+                                        , reference->file
+                                        , histogram->file
+                                        , dist);
+                        lst_files = list_append(lst_files, histogram->file);
+                }
+        }
+        if(lst_files != NULL) {
+                lst_files = list_append(lst_files, reference->file);
+        }
+        return lst_files;
+}
