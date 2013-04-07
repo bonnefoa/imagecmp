@@ -5,11 +5,7 @@
 #include <cl_util.h>
 #include <cl_histogram.h>
 #include <image_util.h>
-#include <math.h>
-#define EPSILON 0.01f
-#define assert_float_equals(res, expected) \
-        fail_unless(fabs(res - expected) < EPSILON\
-                        , "Expected %f, got %f", expected, res)
+#include <common_test.h>
 
 void setup (void)
 {
@@ -47,13 +43,42 @@ START_TEST (test_histogram_average)
 }
 END_TEST
 
+START_TEST (test_histogram_save)
+{
+        char * test_file = "/tmp/histo_cache";
+        histogram_cache_descriptor_init();
+        histogram_t *histo = malloc(sizeof(histogram_t));
+        histo->file = "test";
+        for(unsigned int i = 0; i < 15; i++) {
+                histo->results[i] = 0.4f;
+        }
+
+        Eina_Hash *map_histo = eina_hash_string_small_new(
+                        (void (*)(void *))&histogram_free);
+        eina_hash_add(map_histo, "test", histo);
+        histogram_cache_t *histo_cache = malloc(sizeof(histogram_cache_t));
+        histo_cache->histograms = map_histo;
+        write_histogram_to_file(test_file, histo_cache);
+        free(histo_cache);
+
+        histogram_cache_t *res = read_histogram_file(test_file);
+        histogram_t *entry = eina_hash_find(res->histograms, "test");
+        for(unsigned int i = 0; i < 15; i++) {
+                assert_float_equals(entry->results[i], 0.4f);
+        }
+
+        histogram_cache_descriptor_shutdown();
+}
+END_TEST
+
 Suite * histogram_suite (void)
 {
-        Suite *s = suite_create ("cl_image");
-        TCase *tc_core = tcase_create ("cl_image");
+        Suite *s = suite_create ("histograms");
+        TCase *tc_core = tcase_create ("histograms");
         tcase_add_checked_fixture (tc_core, setup, teardown);
         tcase_add_test (tc_core, test_histogram_distance);
         tcase_add_test (tc_core, test_histogram_average);
+        tcase_add_test (tc_core, test_histogram_save);
         suite_add_tcase (s, tc_core);
         return s;
 }

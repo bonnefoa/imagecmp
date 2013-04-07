@@ -3,17 +3,44 @@
 #include <stdio.h>
 #include <map.h>
 #include <string.h>
-
-#include <sys/time.h>
 #include <util.h>
-#include <Eina.h>
-#include <Eet.h>
+
+static const char CACHE_FILE_ENTRY[] = "cache";
+static Eet_Data_Descriptor *_histogram_descriptor;
+static Eet_Data_Descriptor *_histogram_cache_descriptor;
+
+void histogram_cache_descriptor_init(void)
+{
+        eina_init();
+        eet_init();
+        Eet_Data_Descriptor_Class eddc;
+        EET_EINA_FILE_DATA_DESCRIPTOR_CLASS_SET(&eddc, histogram_t);
+        _histogram_descriptor = eet_data_descriptor_file_new(&eddc);
+
+        EET_EINA_FILE_DATA_DESCRIPTOR_CLASS_SET(&eddc, histogram_cache_t);
+        _histogram_cache_descriptor = eet_data_descriptor_file_new(&eddc);
+
+        EET_DATA_DESCRIPTOR_ADD_BASIC(_histogram_descriptor, histogram_t, "file", file, EET_T_STRING);
+        EET_DATA_DESCRIPTOR_ADD_BASIC_ARRAY(_histogram_descriptor
+                        , histogram_t, "results", results, EET_T_FLOAT);
+
+        EET_DATA_DESCRIPTOR_ADD_HASH(_histogram_cache_descriptor
+                        , histogram_cache_t, "histograms"
+                        , histograms, _histogram_descriptor);
+}
+
+void histogram_cache_descriptor_shutdown(void)
+{
+        eet_data_descriptor_free(_histogram_descriptor);
+        eet_data_descriptor_free(_histogram_cache_descriptor);
+        eet_shutdown();
+        eina_shutdown();
+}
 
 histogram_t * histogram_init()
 {
         histogram_t * histo = malloc(sizeof(histogram_t));
         histo->file = NULL;
-        histo->results = NULL;
         return histo;
 }
 
@@ -51,19 +78,30 @@ float histogram_distance(float * histo_1, float * histo_2)
         return fabs(dist);
 }
 
-histogram_t * read_histogram_line(FILE *input_file) {
-        histogram_t *histo = histogram_init();
-        return histo;
-}
-
-map_t * read_histogram_file(FILE *input_file) {
-        map_t *map = map_create(10000);
-        while(!feof(input_file)){
-                histogram_t *histo = read_histogram_line(input_file);
-                map = map_add(map, histo->file, histo);
+histogram_cache_t * read_histogram_file(char * input_file)
+{
+        histogram_cache_t *histo_cache;
+        Eet_File *ef = eet_open(input_file, EET_FILE_MODE_READ);
+        if (!ef) {
+                fprintf(stderr, "ERROR: could not open '%s' for read\n"
+                                , input_file);
+                return NULL;
         }
-        return map;
+        histo_cache = eet_data_read(ef, _histogram_cache_descriptor
+                        , CACHE_FILE_ENTRY);
+        if (!histo_cache) {
+                eet_close(ef);
+                return NULL;
+        }
+        eet_close(ef);
+        return histo_cache;
 }
 
-void write_histogram_to_file(FILE *output_file, histogram_t *histo) {
+void write_histogram_to_file(char * output_file, histogram_cache_t *histos)
+{
+        Eet_File *ef;
+        ef = eet_open(output_file, EET_FILE_MODE_WRITE);
+        eet_data_write(ef, _histogram_cache_descriptor
+                        , CACHE_FILE_ENTRY, histos, EINA_TRUE);
+        eet_close(ef);
 }
