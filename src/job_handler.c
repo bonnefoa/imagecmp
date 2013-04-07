@@ -1,5 +1,6 @@
 #include <job_handler.h>
 #include <string.h>
+#include <histogram.h>
 
 histogram_t * wait_job(job_t *job)
 {
@@ -8,13 +9,13 @@ histogram_t * wait_job(job_t *job)
         histo->file = malloc(strlen(job->name) + 1);
         strcpy(histo->file, job->name);
         int size = job->result_size[0] * job->result_size[1];
-        histo->results = histogram_average(job->results, size);
+        histogram_average(job->results, histo->results, size);
         job_free(job);
         return histo;
 }
 
 list_t * push_jobs(list_t * files, clinfo_t * clinfo
-                , list_t **histograms, FILE* cache_file)
+                , Eina_Hash *histograms)
 {
         int code;
         list_t * job_waits = NULL;
@@ -51,7 +52,7 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
                 count++;
                 if ( count > 50 ) {
                         histogram_t *histo = wait_job(job);
-                        *histograms = list_append(*histograms, histo);
+                        eina_hash_add(histograms, histo->file, histo);
                         count--;
                 } else {
                         job_waits = list_append(job_waits, job);
@@ -60,29 +61,40 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
         return job_waits;
 }
 
-list_t* wait_for_jobs(list_t * job_waits)
+void wait_for_jobs(list_t * job_waits, Eina_Hash *map_histo)
 {
-        list_t * histograms = NULL;
         while(job_waits != NULL) {
                 job_t * job = job_waits->value;
                 histogram_t *histogram = wait_job(job);
-                histograms = list_append(histograms, histogram);
+                eina_hash_add(map_histo, histogram->file, histogram);
                 job_waits->value = NULL;
                 job_waits = job_waits->next;
         }
-        return histograms;
 }
 
-list_t * process_job_results(list_t * histograms, float threshold)
+list_t * process_job_results(Eina_Hash *map_histo, float threshold)
 {
         list_t * similar_files = NULL;
         list_t * lst_files = NULL;
-        while(histograms != NULL) {
-                lst_files = search_similar(histograms->value
-                                , histograms->next, threshold);
-                histograms = histograms->next;
+        list_t * list_histo = NULL;
+        list_t * current = NULL;
+
+        Eina_Iterator *iter = eina_hash_iterator_data_new(map_histo);
+        void **data = malloc(sizeof(void**));
+        while(eina_iterator_next(iter, data)) {
+                list_histo = list_append(list_histo, *data);
+        }
+        eina_iterator_free(iter);
+        current = list_histo;
+
+        while(current != NULL) {
+                lst_files = search_similar(current->value
+                                , current->next, threshold);
+                current = current->next;
                 similar_files = list_append(similar_files, lst_files);
         }
+        list_release(list_histo);
+
         return similar_files;
 }
 
@@ -90,21 +102,19 @@ list_t * process_files(list_t * files, float threshold)
 {
         clinfo_t * clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         list_t * similar_files = NULL;
-        list_t ** histograms = malloc(sizeof(list_t *));
-        FILE *cache_file = fopen(".histograms", "wb");
 
-        *histograms = NULL;
+        Eina_Hash *map_histo = eina_hash_string_small_new(
+                        (void (*)(void *))&histogram_free);
         list_t * job_waits = NULL;
 
-        job_waits = push_jobs(files, clinfo, histograms, cache_file);
+        job_waits = push_jobs(files, clinfo, map_histo);
 
-        list_t *last_histograms = wait_for_jobs(job_waits);
-        *histograms = list_append(*histograms, last_histograms);
+        wait_for_jobs(job_waits, map_histo);
         list_release(job_waits);
 
-        similar_files = process_job_results(*histograms, threshold);
-        list_release_custom(*histograms, &histogram_free);
+        similar_files = process_job_results(map_histo, threshold);
 
+        eina_hash_free(map_histo);
         clinfo_free(clinfo);
         return similar_files;
 }

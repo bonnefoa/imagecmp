@@ -5,17 +5,14 @@
 #include <cl_util.h>
 #include <cl_histogram.h>
 #include <image_util.h>
-#include <math.h>
-#define EPSILON 0.01f
-#define assert_float_equals(res, expected) \
-        fail_unless(fabs(res - expected) < EPSILON\
-                        , "Expected %f, got %f", expected, res)
+#include <common_test.h>
 
 int width = 32;
 int height = 32;
 clinfo_t * clinfo;
 job_t * job;
 image_t * image;
+Eina_Hash *map_histo;
 
 void setup (void)
 {
@@ -28,12 +25,15 @@ void setup (void)
         clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
         clinfo->max_width = 2048;
         clinfo->max_heigth = 2048;
+        map_histo = eina_hash_string_small_new(
+                        (void (*)(void *))&histogram_free);
 }
 
 void teardown (void)
 {
         clinfo_free(clinfo);
         job_free(job);
+        eina_hash_free(map_histo);
 }
 
 void fill_rgba_pixels(unsigned char (*fill_funct)(int, int, int))
@@ -196,9 +196,7 @@ START_TEST (test_read_jpeg_from_file)
         create_test_file(path, blue_green_fill);
         write_jpeg_image(path, image);
 
-        FILE *tmp_file = fopen("/tmp/imagecl_cache", "wb");
-        list_t **histo = malloc(sizeof(list_t*));
-        job_t * job = push_jobs(files, clinfo, histo, tmp_file)->value;
+        job_t * job = push_jobs(files, clinfo, map_histo)->value;
         clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
@@ -212,9 +210,7 @@ START_TEST (test_read_png_from_file)
         create_test_file(path, blue_green_fill);
         write_png_image(path, image);
 
-        FILE *tmp_file = fopen("/tmp/imagecl_cache", "wb");
-        list_t **histo = malloc(sizeof(list_t*));
-        job_t * job = push_jobs(files, clinfo, histo, tmp_file)->value;
+        job_t * job = push_jobs(files, clinfo, map_histo)->value;
         clFinish(clinfo->command_queue);
         check_blue_green_results(job->results);
 }
