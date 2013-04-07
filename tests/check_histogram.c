@@ -49,7 +49,7 @@ START_TEST (test_histogram_save)
         char * test_file = "/tmp/histo_cache";
         histogram_cache_descriptor_init();
         histogram_t *histo = malloc(sizeof(histogram_t));
-        histo->file = "test";
+        histo->file = strdup("test");
         for(unsigned int i = 0; i < BUCKET_NUMBER; i++) {
                 histo->results[i] = 0.4f;
         }
@@ -57,18 +57,18 @@ START_TEST (test_histogram_save)
         Eina_Hash *map_histo = eina_hash_string_small_new(
                         (void (*)(void *))&histogram_free);
         eina_hash_add(map_histo, "test", histo);
-        histogram_cache_t *histo_cache = malloc(sizeof(histogram_cache_t));
-        histo_cache->histograms = map_histo;
-        mark_point();
-        write_histogram_to_file(test_file, histo_cache);
-        free(histo_cache);
+        write_histogram_to_file(test_file, map_histo);
+        eina_hash_free(map_histo);
 
-        histogram_cache_t *res = read_histogram_file(test_file);
-        histogram_t *entry = eina_hash_find(res->histograms, "test");
+        Eina_Hash *map_histo_2 = read_histogram_file(test_file);
+        histogram_t *entry = eina_hash_find(map_histo, "test");
         for(unsigned int i = 0; i < BUCKET_NUMBER; i++) {
                 assert_float_equals(entry->results[i], 0.4f);
         }
+        write_histogram_to_file(test_file, map_histo_2);
 
+        mark_point();
+        eina_hash_free(map_histo);
         histogram_cache_descriptor_shutdown();
 }
 END_TEST
@@ -95,4 +95,3 @@ int main (void)
         srunner_free (sr);
         return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
