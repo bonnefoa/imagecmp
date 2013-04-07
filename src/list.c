@@ -23,7 +23,6 @@ void list_release(list_t * list)
         list_t * next = NULL;
         while(curr) {
                 next = curr->next;
-                free(curr->value);
                 free(curr);
                 curr = next;
         }
