@@ -2,12 +2,13 @@
 #include <string.h>
 #include <histogram.h>
 
-histogram_t * wait_job(job_t *job)
+static char CACHE_FILE[] = "/home/sora/.histo_cache";
+
+histogram_t * wait_and_fetch_histo_from_job(job_t *job)
 {
         clWaitForEvents(1, job->fetch_event);
         histogram_t * histo = histogram_init();
-        histo->file = malloc(strlen(job->name) + 1);
-        strcpy(histo->file, job->name);
+        histo->file = strdup(job->name);
         int size = job->result_size[0] * job->result_size[1];
         histogram_average(job->results, histo->results, size);
         job_free(job);
@@ -15,7 +16,7 @@ histogram_t * wait_job(job_t *job)
 }
 
 list_t * push_jobs(list_t * files, clinfo_t * clinfo
-                , Eina_Hash *histograms)
+                , Eina_Hash *map_histo)
 {
         int code;
         list_t * job_waits = NULL;
@@ -23,6 +24,10 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
         while(files != NULL) {
                 char * filename = files->value;
                 files = files->next;
+
+                histogram_t *cached_elem = eina_hash_find(map_histo, filename);
+                if(cached_elem)
+                        continue;
 
                 image_t * image = image_init();
                 image->path = filename;
@@ -51,8 +56,8 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
                 clFlush(clinfo->command_queue);
                 count++;
                 if ( count > 50 ) {
-                        histogram_t *histo = wait_job(job);
-                        eina_hash_add(histograms, histo->file, histo);
+                        histogram_t *histo = wait_and_fetch_histo_from_job(job);
+                        eina_hash_add(map_histo, strdup(histo->file), histo);
                         count--;
                 } else {
                         job_waits = list_append(job_waits, job);
@@ -65,9 +70,8 @@ void wait_for_jobs(list_t * job_waits, Eina_Hash *map_histo)
 {
         while(job_waits != NULL) {
                 job_t * job = job_waits->value;
-                histogram_t *histogram = wait_job(job);
-                eina_hash_add(map_histo, histogram->file, histogram);
-                job_waits->value = NULL;
+                histogram_t *histogram = wait_and_fetch_histo_from_job(job);
+                eina_hash_add(map_histo, strdup(histogram->file), histogram);
                 job_waits = job_waits->next;
         }
 }
@@ -100,21 +104,23 @@ list_t * process_job_results(Eina_Hash *map_histo, float threshold)
 
 list_t * process_files(list_t * files, float threshold)
 {
+        histogram_cache_descriptor_init();
         clinfo_t * clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         list_t * similar_files = NULL;
-
-        Eina_Hash *map_histo = eina_hash_string_small_new(
-                        (void (*)(void *))&histogram_free);
         list_t * job_waits = NULL;
+        Eina_Hash *map_histo;
 
+        map_histo = read_histogram_file(CACHE_FILE);
         job_waits = push_jobs(files, clinfo, map_histo);
-
         wait_for_jobs(job_waits, map_histo);
+
         list_release(job_waits);
 
+        write_histogram_to_file(CACHE_FILE, map_histo);
         similar_files = process_job_results(map_histo, threshold);
 
         eina_hash_free(map_histo);
         clinfo_free(clinfo);
+        histogram_cache_descriptor_shutdown();
         return similar_files;
 }

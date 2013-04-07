@@ -4,10 +4,12 @@
 #include <map.h>
 #include <string.h>
 #include <util.h>
+#include <unistd.h>
 
 static const char CACHE_FILE_ENTRY[] = "cache";
 static Eet_Data_Descriptor *_histogram_descriptor;
 static Eet_Data_Descriptor *_histogram_cache_descriptor;
+static Eet_File *cache_file = NULL;
 
 void histogram_cache_descriptor_init(void)
 {
@@ -25,14 +27,17 @@ void histogram_cache_descriptor_init(void)
                         , histogram_t, "results", results, EET_T_FLOAT);
 
         EET_DATA_DESCRIPTOR_ADD_HASH(_histogram_cache_descriptor
-                        , histogram_cache_t, "histograms"
-                        , histograms, _histogram_descriptor);
+                        , histogram_cache_t, "map_histo"
+                        , map_histo, _histogram_descriptor);
 }
 
 void histogram_cache_descriptor_shutdown(void)
 {
         eet_data_descriptor_free(_histogram_descriptor);
         eet_data_descriptor_free(_histogram_cache_descriptor);
+        if(cache_file) {
+                eet_close(cache_file);
+        }
         eet_shutdown();
         eina_shutdown();
 }
@@ -75,32 +80,54 @@ float histogram_distance(float * histo_1, float * histo_2)
         return fabs(dist);
 }
 
-histogram_cache_t * read_histogram_file(char * input_file)
+Eina_Hash *read_histogram_file(char * input_file)
 {
         histogram_cache_t *histo_cache;
+        Eina_Hash *map_histo;
         Eet_File *ef = eet_open(input_file, EET_FILE_MODE_READ);
         if (!ef) {
-                fprintf(stderr, "ERROR: could not open '%s' for read\n"
-                                , input_file);
-                return NULL;
+                map_histo = eina_hash_string_small_new(
+                                (void (*)(void *))&histogram_free);
+                return map_histo;
         }
+
         histo_cache = eet_data_read(ef, _histogram_cache_descriptor
                         , CACHE_FILE_ENTRY);
-        if (!histo_cache) {
-                eet_close(ef);
-                return NULL;
+        if(cache_file) {
+                eet_close(cache_file);
         }
-        eet_close(ef);
-        return histo_cache;
+        cache_file = ef;
+        map_histo = histo_cache->map_histo;
+        free(histo_cache);
+        return map_histo;
 }
 
-void write_histogram_to_file(char * output_file, histogram_cache_t *histos)
+void write_histogram_to_file(char * output_file, Eina_Hash *map_histo)
 {
         Eet_File *ef;
+        histogram_cache_t *cache_histo;
+
+        printf("Writing cache map with %i entries\n"
+                        , eina_hash_population(map_histo));
+
+        Eina_Iterator *iter = eina_hash_iterator_data_new(map_histo);
+        void **data = malloc(sizeof(void**));
+        while(eina_iterator_next(iter, data)) {
+                histogram_t *current = *data;
+                printf("Got file %s\n", current->file);
+        }
+        eina_iterator_free(iter);
+
+        unlink(output_file);
+        cache_histo = malloc(sizeof(histogram_cache_t));
+        cache_histo->map_histo = map_histo;
+
         ef = eet_open(output_file, EET_FILE_MODE_WRITE);
         eet_data_write(ef, _histogram_cache_descriptor
-                        , CACHE_FILE_ENTRY, histos, EINA_TRUE);
+                        , CACHE_FILE_ENTRY, cache_histo, EINA_TRUE);
+
         eet_close(ef);
+        free(cache_histo);
 }
 
 list_t * search_similar(histogram_t * reference, list_t * histograms
