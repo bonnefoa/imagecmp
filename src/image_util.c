@@ -44,7 +44,6 @@ unsigned char * convert_to_rgba(unsigned char * source, unsigned int width, unsi
 
 image_t * read_image(image_t * image)
 {
-        printf("Reading file %s\n", image->path);
         FILE * infile;
         if ((infile = fopen(image->path, "rb")) == NULL) {
                 fprintf(stderr, "can't open %s\n", image->path);
@@ -58,7 +57,7 @@ image_t * read_image(image_t * image)
                 fseek(infile, 0, 0);
                 image = read_jpeg_image(image, infile);
         } else {
-                printf("Not a jpeg file\n");
+                printf("%s is not a jpeg file\n", image->path);
                 return NULL;
         }
         fclose(infile);

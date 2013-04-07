@@ -59,7 +59,6 @@ void event_callback(cl_event event, cl_int exec_status, void * args)
         (void)event;
         (void)exec_status;
         job_t * job = args;
-        printf("Callback for file %s\n", job->name);
         job->results = reduce_histogram(job);
 
         clReleaseMemObject(*job->image_buffer);

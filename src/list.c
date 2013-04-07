@@ -40,6 +40,17 @@ void list_release_custom(list_t * list, void (*free_funct)(void*))
         }
 }
 
+int list_size(list_t *list)
+{
+        int length = 0;
+        list_t *current = list;
+        while(current) {
+                length++;
+                current = current->next;
+        }
+        return length;
+}
+
 list_t * list_append(list_t * list, void * value)
 {
         if (value == NULL) {

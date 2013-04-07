@@ -15,5 +15,6 @@ list_t * list_append(list_t * list, void * value);
 list_t * list_concat(list_t * list, list_t * list_2);
 
 list_t * list_files(const char * dir_path);
+int list_size(list_t *list);
 
 #endif

@@ -171,8 +171,6 @@ cl_mem * push_image(clinfo_t *clinfo, image_t * image, cl_event * event)
         }
         size_t origin[] = {0,0,0};
         size_t region[] = {image->size[0], image->size[1], 1};
-        printf("Pushing image of size %i/%i\n", image->size[0]
-                        , image->size[1]);
         err = clEnqueueWriteImage(clinfo->command_queue, *image_buffer
                                   , CL_FALSE, origin, region
                                   , 0, 0, *image->pixels, 0, NULL, event);

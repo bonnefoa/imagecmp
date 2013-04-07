@@ -21,6 +21,8 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
         int code;
         list_t * job_waits = NULL;
         int count = 0;
+        int histo_done = eina_hash_population(map_histo);
+        int global = list_size(files);
         while(files != NULL) {
                 char * filename = files->value;
                 files = files->next;
@@ -44,8 +46,6 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
                 }
 
                 job_t * job = job_init();
-                printf("Processing image %s, width=%i, height=%i\n", filename
-                                , image->size[0], image->size[1]);
                 code = init_job_from_image(image, job);
                 if(code == EXIT_FAILURE) {
                         fprintf(stderr, "Could not init job from image %i\n"
@@ -58,7 +58,12 @@ list_t * push_jobs(list_t * files, clinfo_t * clinfo
                 if ( count > 50 ) {
                         histogram_t *histo = wait_and_fetch_histo_from_job(job);
                         eina_hash_add(map_histo, strdup(histo->file), histo);
+                        histo_done++;
                         count--;
+                        if(histo_done % 50 == 0){
+                                printf("Processed %i / %i\n", histo_done, global);
+                                write_histogram_to_file(CACHE_FILE, map_histo);
+                        }
                 } else {
                         job_waits = list_append(job_waits, job);
                 }

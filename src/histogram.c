@@ -110,14 +110,6 @@ void write_histogram_to_file(char * output_file, Eina_Hash *map_histo)
         printf("Writing cache map with %i entries\n"
                         , eina_hash_population(map_histo));
 
-        Eina_Iterator *iter = eina_hash_iterator_data_new(map_histo);
-        void **data = malloc(sizeof(void**));
-        while(eina_iterator_next(iter, data)) {
-                histogram_t *current = *data;
-                printf("Got file %s\n", current->file);
-        }
-        eina_iterator_free(iter);
-
         unlink(output_file);
         cache_histo = malloc(sizeof(histogram_cache_t));
         cache_histo->map_histo = map_histo;
