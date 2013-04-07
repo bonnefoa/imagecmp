@@ -94,8 +94,10 @@ list_t * process_job_results(Eina_Hash *map_histo, float threshold)
                 list_histo = list_append(list_histo, *data);
         }
         eina_iterator_free(iter);
-        current = list_histo;
 
+        printf("Looking for similarities in %i elements\n"
+                        , eina_hash_population(map_histo));
+        current = list_histo;
         while(current != NULL) {
                 lst_files = search_similar(current->value
                                 , current->next, threshold);
@@ -107,6 +109,28 @@ list_t * process_job_results(Eina_Hash *map_histo, float threshold)
         return similar_files;
 }
 
+void clean_inexistant_files(Eina_Hash *map_histo)
+{
+        struct stat st;
+        Eina_Iterator *iter = eina_hash_iterator_data_new(map_histo);
+        void **data = malloc(sizeof(void**));
+        list_t *to_delete = NULL;
+        while(eina_iterator_next(iter, data)) {
+                histogram_t *current = *data;
+                if(stat(current->file, &st) != 0) {
+                        to_delete = list_append(to_delete, current->file);
+                }
+        }
+        eina_iterator_free(iter);
+
+        list_t *current = to_delete;
+        while(current) {
+                printf("Deleting cache for %s\n", current->value);
+                eina_hash_del_by_key(map_histo, current->value);
+                current = current->next;
+        }
+}
+
 list_t * process_files(list_t * files, float threshold)
 {
         histogram_cache_descriptor_init();
@@ -116,6 +140,7 @@ list_t * process_files(list_t * files, float threshold)
         Eina_Hash *map_histo;
 
         map_histo = read_histogram_file(CACHE_FILE);
+        clean_inexistant_files(map_histo);
         job_waits = push_jobs(files, clinfo, map_histo);
         wait_for_jobs(job_waits, map_histo);
 
