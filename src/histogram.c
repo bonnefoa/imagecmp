@@ -132,15 +132,12 @@ list_t * search_similar(histogram_t * reference, list_t * histograms
                 float dist = histogram_distance(reference->results
                                 , histogram->results);
                 if(dist <= threshold) {
-                        printf("\"%s\"\n\"%s\"\nsimilar (distance %.2f)\n"
-                                        , reference->file
-                                        , histogram->file
-                                        , dist);
-                        lst_files = list_append(lst_files, histogram->file);
+                        lst_files = list_append(lst_files
+                                        , strdup(histogram->file));
                 }
         }
         if(lst_files) {
-                lst_files = list_append(lst_files, reference->file);
+                lst_files = list_append(lst_files, strdup(reference->file));
         }
         return lst_files;
 }
