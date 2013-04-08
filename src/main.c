@@ -14,7 +14,7 @@ int main(int argc, char * argv[])
         while(current) {
                 list_t *subcurrent = current->value;
                 while(subcurrent) {
-                        printf("%s\n", subcurrent->value);
+                        printf("\"%s\"\n", subcurrent->value);
                         subcurrent = subcurrent->next;
                 }
                 printf("\n");
