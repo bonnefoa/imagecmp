@@ -81,19 +81,18 @@ void wait_for_jobs(list_t * job_waits, Eina_Hash *map_histo)
         }
 }
 
-list_t * process_job_results(Eina_Hash *map_histo, float threshold)
+list_t * process_job_results(Eina_Hash *map_histo, list_t *files, float threshold)
 {
         list_t * similar_files = NULL;
         list_t * lst_files = NULL;
         list_t * list_histo = NULL;
         list_t * current = NULL;
 
-        Eina_Iterator *iter = eina_hash_iterator_data_new(map_histo);
-        void **data = malloc(sizeof(void**));
-        while(eina_iterator_next(iter, data)) {
-                list_histo = list_append(list_histo, *data);
+        while(files) {
+                histogram_t *cached_elem = eina_hash_find(map_histo, files->value);
+                list_histo = list_append(list_histo, cached_elem);
+                files = files->next;
         }
-        eina_iterator_free(iter);
 
         printf("Looking for similarities in %i elements with threshold %.2f\n"
                         , eina_hash_population(map_histo), threshold);
@@ -147,7 +146,7 @@ list_t * process_files(list_t * files, float threshold)
         list_release(job_waits);
 
         write_histogram_to_file(CACHE_FILE, map_histo);
-        similar_files = process_job_results(map_histo, threshold);
+        similar_files = process_job_results(map_histo, files, threshold);
 
         eina_hash_free(map_histo);
         clinfo_free(clinfo);
