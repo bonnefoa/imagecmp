@@ -10,6 +10,7 @@
 #include <list.h>
 
 #define BUCKET_NUMBER 5
+#define RESULT_SIZE 15
 
 typedef struct histogram {
         char * file;
