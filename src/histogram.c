@@ -57,16 +57,16 @@ void histogram_free(histogram_t * histo)
 
 void histogram_average(float * histo, float *average, int size)
 {
-        for(int i = 0; i < BUCKET_NUMBER; i++) {
-                average[i] = 0;
+        for(int i = 0; i < RESULT_SIZE; i++) {
+                average[i] = 0.f;
         }
         for(int x = 0; x < size; x++) {
                 int index = x * 16;
-                for(int i = 0; i < BUCKET_NUMBER; i++) {
+                for(int i = 0; i < RESULT_SIZE; i++) {
                         average[i] += histo[index + i];
                 }
         }
-        for(int i = 0; i < BUCKET_NUMBER; i++) {
+        for(int i = 0; i < RESULT_SIZE; i++) {
                 average[i] /= size;
         }
 }
@@ -74,7 +74,7 @@ void histogram_average(float * histo, float *average, int size)
 float histogram_distance(float * histo_1, float * histo_2)
 {
         float dist = 0.f;
-        for(unsigned int i = 0; i < 15; i++) {
+        for(unsigned int i = 0; i < RESULT_SIZE; i++) {
                 dist += fabs(histo_2[i] - histo_1[i]);
         }
         return fabs(dist);

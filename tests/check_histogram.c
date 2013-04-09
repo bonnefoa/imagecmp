@@ -20,26 +20,26 @@ START_TEST (test_histogram_distance)
         float * histo_1 = malloc(sizeof(float) * VECTOR_SIZE);
         float * histo_2 = malloc(sizeof(float) * VECTOR_SIZE);
         mark_point();
-        for(unsigned int i = 0; i < 15; i++) {
+        for(unsigned int i = 0; i < BUCKET_NUMBER; i++) {
                 histo_1[i] = 0.f;
-                histo_2[i] = 0.1f;
+                histo_2[i] = i / 10.0;
         }
         mark_point();
         float res = histogram_distance(histo_1, histo_2);
-        assert_float_equals(res, 1.5f);
+        assert_float_equals(res, 1.0f);
 }
 END_TEST
 
 START_TEST (test_histogram_average)
 {
-        float results[5];
+        float results[RESULT_SIZE];
         float * histo = malloc(sizeof(float) * 32);
         for(unsigned int i = 0; i < 32; i++) {
-                histo[i] = 0.1f;
+                histo[i] = i / 32.0;
         }
         histogram_average(histo, results, 2);
         for(int i = 0; i < BUCKET_NUMBER; i++) {
-                assert_float_equals(results[i], 0.1f);
+                assert_float_equals(results[i], (i + i + 16) / 32.0 / 2.f);
         }
 }
 END_TEST

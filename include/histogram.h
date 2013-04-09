@@ -14,7 +14,7 @@
 
 typedef struct histogram {
         char * file;
-        float results[BUCKET_NUMBER];
+        float results[RESULT_SIZE];
 } histogram_t;
 
 typedef struct histogram_cache  {
