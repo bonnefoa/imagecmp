@@ -25,7 +25,8 @@ __kernel void generate_histogram (
 
         uint3 pixel = (uint3)(0, 0, 0);
         if(globalIdX <= imageWidth && globalIdY <= imageHeight) {
-                pixel = read_imageui(inputImage, sampler, (int2)(globalIdX, globalIdY)).xyz;
+                pixel = read_imageui(inputImage, sampler
+                        , (int2)(globalIdX, globalIdY)).xyz;
                 for (int i = 0; i < 3; i++ ) {
                         uchar bucket = i * 5 + pixel[i] / 51;
                         localArray[ indexLocal ][bucket] += 1;

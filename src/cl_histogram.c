@@ -84,10 +84,13 @@ int generate_histogram(clinfo_t * clinfo
                 return EXIT_FAILURE;
         }
 
-        err = clSetKernelArg(clinfo->kernel, 0, sizeof(cl_mem), job->image_buffer);
-        err |= clSetKernelArg(clinfo->kernel, 1, sizeof(cl_mem), job->output_buffer);
+        err = clSetKernelArg(clinfo->kernel, 0, sizeof(cl_mem)
+                        , job->image_buffer);
+        err |= clSetKernelArg(clinfo->kernel, 1, sizeof(cl_mem)
+                        , job->output_buffer);
         err |= clSetKernelArg(clinfo->kernel, 2
-                              , sizeof(cl_ushort16) * job->local_size[0] * job->local_size[1]
+                              , sizeof(cl_ushort16)
+                              * job->local_size[0] * job->local_size[1]
                               , NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Error on kernel arg set %i\n", err);
