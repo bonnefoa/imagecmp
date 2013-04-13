@@ -20,7 +20,7 @@ typedef struct clinfo {
 char * read_file(const char * filename);
 
 clinfo_t *clinfo_init(const char * kernel_source, const char * kernel_name
-                , unsigned int plateform_id, unsigned int device_id);
+                , unsigned int plateform_id);
 
 void clinfo_free(clinfo_t * clinfo);
 

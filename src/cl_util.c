@@ -66,8 +66,10 @@ void print_cl_profiling(cl_event event)
 size_t get_kernel_group(clinfo_t * clinfo)
 {
         size_t kernelSize;
-        cl_int err = clGetKernelWorkGroupInfo(clinfo->kernel, clinfo->device_id
-                                              , CL_KERNEL_WORK_GROUP_SIZE, sizeof(kernelSize), &kernelSize, NULL);
+        cl_int err = clGetKernelWorkGroupInfo(clinfo->kernel
+                        , clinfo->device_id
+                        , CL_KERNEL_WORK_GROUP_SIZE, sizeof(kernelSize)
+                        , &kernelSize, NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to retrieve kernel group info\n");
                 return 0;
@@ -75,7 +77,8 @@ size_t get_kernel_group(clinfo_t * clinfo)
         return kernelSize;
 }
 
-clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
+clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name
+                , unsigned int plateform_id)
 {
         int devType = CL_DEVICE_TYPE_ALL;
 
@@ -84,26 +87,29 @@ clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
         clinfo->max_heigth = malloc(sizeof(int));
         clinfo->max_width = malloc(sizeof(int));
 
-        err = clGetPlatformIDs(1, &(clinfo->cl_plateform), NULL);
+        err = clGetPlatformIDs(plateform_id, &(clinfo->cl_plateform), NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to find plateform\n");
                 exit( EXIT_FAILURE );
         }
 
-        err = clGetDeviceIDs(clinfo->cl_plateform, devType, 1, &(clinfo->device_id), NULL);
+        err = clGetDeviceIDs(clinfo->cl_plateform, devType, 1
+                        , &(clinfo->device_id), NULL);
         if(err != CL_SUCCESS) {
                 fprintf(stderr, "Failed to get devices\n");
                 exit( EXIT_FAILURE );
         }
 
-        clinfo->context = clCreateContext(0, 1, &(clinfo->device_id), NULL, NULL, &err);
+        clinfo->context = clCreateContext(0, 1, &(clinfo->device_id)
+                        , NULL, NULL, &err);
         if(!clinfo->context) {
                 fprintf(stderr, "Failed to create context\n");
                 exit( EXIT_FAILURE );
         }
 
         clinfo->command_queue = clCreateCommandQueue(clinfo->context
-                                , clinfo->device_id, CL_QUEUE_PROFILING_ENABLE, &err);
+                                , clinfo->device_id
+                                , CL_QUEUE_PROFILING_ENABLE, &err);
         if(!clinfo->command_queue) {
                 fprintf(stderr, "Failed to create commands\n");
                 exit( EXIT_FAILURE );
@@ -124,7 +130,9 @@ clinfo_t * clinfo_init(const char * kernelSource, const char * kernel_name)
                 char buffer[2048];
 
                 fprintf(stderr, "Failed to build program\n");
-                clGetProgramBuildInfo(clinfo->program, clinfo->device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+                clGetProgramBuildInfo(clinfo->program, clinfo->device_id
+                                , CL_PROGRAM_BUILD_LOG
+                                , sizeof(buffer), buffer, &len);
                 fprintf(stderr, "%s\n", buffer);
                 exit( EXIT_FAILURE );
         }
