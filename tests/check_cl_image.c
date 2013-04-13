@@ -22,7 +22,7 @@ void setup (void)
         image->image_fmt->image_channel_order = CL_RGBA;
         image->image_fmt->image_channel_data_type = CL_UNSIGNED_INT8;
         image->path = "test_image";
-        clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram");
+        clinfo = clinfo_init("src/kernel_image.cl", "generate_histogram", 1);
         map_histo = eina_hash_string_small_new(
                         (void (*)(void *))&histogram_free);
 }
