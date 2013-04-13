@@ -130,10 +130,9 @@ void clean_inexistant_files(Eina_Hash *map_histo)
         }
 }
 
-list_t * process_files(list_t * files, float threshold)
+list_t * process_files(clinfo_t *clinfo, list_t * files, float threshold)
 {
         histogram_cache_descriptor_init();
-        clinfo_t * clinfo = clinfo_init(KERNEL_PATH, KERNEL_FUNCTION);
         list_t * similar_files = NULL;
         list_t * job_waits = NULL;
         Eina_Hash *map_histo;
