@@ -19,7 +19,9 @@ typedef struct clinfo {
 
 char * read_file(const char * filename);
 
-clinfo_t *clinfo_init(const char * kernel_source, const char * kernel_name);
+clinfo_t *clinfo_init(const char * kernel_source, const char * kernel_name
+                , unsigned int plateform_id, unsigned int device_id);
+
 void clinfo_free(clinfo_t * clinfo);
 
 void print_cl_info(clinfo_t * clinfo);

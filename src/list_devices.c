@@ -16,7 +16,7 @@ void print_device(cl_device_id device)
         print_int_info(device, "Image height", CL_DEVICE_IMAGE2D_MAX_HEIGHT);
 }
 
-void print_plateform(cl_platform_id platform)
+void print_plateform(int platform_num, cl_platform_id platform)
 {
         cl_device_id* devices;
         cl_uint deviceCount;
@@ -24,6 +24,7 @@ void print_plateform(cl_platform_id platform)
         devices = (cl_device_id*) malloc(sizeof(cl_device_id) * deviceCount);
         clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
         for (unsigned int i = 0; i < deviceCount; i++) {
+                printf("Platform %i, Device %i\n", platform_num + 1, i + 1);
                 print_device(devices[i]);
         }
         free(devices);
@@ -34,10 +35,11 @@ int main()
         cl_uint platformCount;
         cl_platform_id* platforms;
         clGetPlatformIDs(0, NULL, &platformCount);
+        printf("Get %d plateforms\n", platformCount);
         platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
         clGetPlatformIDs(platformCount, platforms, NULL);
         for (unsigned int i = 0; i < platformCount; i++) {
-                print_plateform(platforms[i]);
+                print_plateform(i, platforms[i]);
         }
         free(platforms);
         return 0;
