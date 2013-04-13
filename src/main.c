@@ -4,7 +4,6 @@
 int main(int argc, char * argv[])
 {
         unsigned int plateform_id;
-        unsigned int device_id;
         if(argc < 2) {
                 fprintf(stderr, "You need to provide a <platform id> "
                         "<directoy>. Use make print_cl_infos "
