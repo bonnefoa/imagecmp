@@ -89,7 +89,7 @@ int generate_histogram(clinfo_t * clinfo
         err |= clSetKernelArg(clinfo->kernel, 1, sizeof(cl_mem)
                         , job->output_buffer);
         err |= clSetKernelArg(clinfo->kernel, 2
-                              , sizeof(cl_ushort16)
+                              , sizeof(cl_ushort) * 16
                               * job->local_size[0] * job->local_size[1]
                               , NULL);
         if(err != CL_SUCCESS) {

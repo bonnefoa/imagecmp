@@ -3,7 +3,7 @@ const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_F
 __kernel void generate_histogram (
         __read_only image2d_t inputImage,
         __global float16 * outputBuffer,
-        __local ushort16 * localArray)
+        __local ushort * localArray)
 {
 
         int globalIdX = get_global_id(0);
@@ -20,8 +20,11 @@ __kernel void generate_histogram (
         int imageWidth = get_image_width(inputImage);
         int imageHeight = get_image_height(inputImage);
 
-        uint indexLocal = localIdX + localIdY * localSizeX;
-        localArray[ indexLocal ] = 0;
+        uint indexLocal = (localIdX + localIdY * localSizeX);
+        uint indexArray = indexLocal * 16;
+        for(int i = 0; i < 16; i++) {
+            localArray[ indexArray + i] = 0;
+        }
 
         uint3 pixel = (uint3)(0, 0, 0);
         if(globalIdX <= imageWidth && globalIdY <= imageHeight) {
@@ -29,16 +32,18 @@ __kernel void generate_histogram (
                         , (int2)(globalIdX, globalIdY)).xyz;
                 for (int i = 0; i < 3; i++ ) {
                         uchar bucket = i * 5 + pixel[i] / 51;
-                        localArray[ indexLocal ][bucket] += 1;
+                        localArray[ indexArray + bucket] += 1;
                 }
-                localArray[ indexLocal ].sf += 1;
+                localArray[ indexArray + 15] += 1;
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
         for ( unsigned int s = localSizeY * localSizeX / 2; s > 0; s >>= 1 ) {
                 if(indexLocal < s) {
-                        localArray[indexLocal] += localArray[indexLocal + s];
+                    for(int i = 0; i < 16; i++) {
+                        localArray[indexArray + i] += localArray[indexArray + s * 16 + i];
+                    }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
         }
@@ -46,10 +51,18 @@ __kernel void generate_histogram (
         if(localIdX==0 && localIdY==0) {
                 int index = groupIdX + groupIdY * groupNumX;
 
-                float numPixels = localArray[0].sf;
-                outputBuffer[index] = convert_float16(localArray[0]);
-                if (localArray[0].sf != 0) {
-                    outputBuffer[index] /= localArray[0].sf;
+                ushort16 out = { localArray[0], localArray[1]
+                    , localArray[2], localArray[3]
+                    , localArray[4], localArray[5]
+                    , localArray[6], localArray[7]
+                    , localArray[8], localArray[9]
+                    , localArray[10], localArray[11]
+                    , localArray[12], localArray[13]
+                    , localArray[14], localArray[15] } ;
+                float numPixels = localArray[15];
+                outputBuffer[index] = convert_float16(out);
+                if (numPixels != 0) {
+                    outputBuffer[index] /= numPixels;
                 }
                 outputBuffer[index].sf = numPixels;
         }
